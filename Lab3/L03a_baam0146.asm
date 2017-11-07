@@ -10,9 +10,61 @@ global main
 
 section .text
 main:
+
+	; KERDES: szamok osszeadasakor elofordulo tulcsordulas eseten ki kell irni a carry bit-et is?
+
+	mov		eax, str_beker_hex	; ask for input
+	call	mio_writestr
+	call	mio_writeln
 	
+.be_hex1:
+	mov		eax, str_a
+	call	mio_writestr
 	call	read_hex
+	jc		.hibakezeles_hex1
+	
+	mov		ebx, eax
+.be_hex2:
+	mov		eax, str_b
+	call	mio_writestr
+	call	read_hex
+	jc		.hibakezeles_hex1
+	
+	mov		ecx, eax
+	mov		eax, str_a				; print A
+	call	mio_writestr
+	mov		eax, ebx
 	call	write_bin
+	
+	mov		eax, str_b				; print B
+	call	mio_writestr
+	mov		eax, ecx
+	call	write_bin
+	
+	mov		eax, str_ab				; print A + B
+	call	mio_writestr
+	mov		eax, ebx
+	add		eax, ecx
+	call	write_bin
+	
+	ret
+	
+	
+	
+.hibakezeles_hex1:
+	call	mio_writeln
+	mov		eax, str_hiba
+	call	mio_writestr
+	call	mio_writeln
+	jmp		.be_hex1
+	
+.hibakezeles_hex2:
+	call	mio_writeln
+	mov		eax, str_hiba
+	call	mio_writestr
+	call	mio_writeln
+	jmp		.be_hex2
+	
 	ret
 	
 	
@@ -28,7 +80,7 @@ write_bin:
 	mov		ecx, 32		; set loop counter
 
 .bin_loop:
-	shl		ebx			; shift digit into carry
+	shl		ebx, 1			; shift digit into carry
 	jc		.digit_one
 	mov		al, '0'
 	jmp		.write_digit
@@ -132,6 +184,10 @@ read_hex:
 
 	
 section .data
-
+	str_a			db	'A = ', 0
+	str_b			db	'B = ', 0
+	str_ab			db	'A + B = ', 0
+	str_beker_hex	db	'Adjon meg ket szamot hexadecimalis alakban: ', 0
+	str_hiba		db	'Hiba: Rossz bemenet', 0
 
 section .bss
