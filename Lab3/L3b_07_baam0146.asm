@@ -1,9 +1,9 @@
 ; nev: Balazs Adam-Attila
 ; azonosito: baam0146
 ; csoport: 621
-; labor: L3 B 
-; Feladat: Írjunk meg egy-egy ASM alprogramot (függvényt, eljárást) 32 bites, előjeles egész (decimális), illetve 32 bites, pozitív hexa számok
-; beolvasására és kiírására.
+; labor: L3 B 07
+; Feladat: Keszítsünk assembly programot, amely beolvas három előjel nélküli egész számot, 32 bites egészként, kiírja a felhasznált szabályt és
+; a beolvasott értékeket bináris formában, majd előállítja és végül kiírja bináris formában a művelet eredményét.
 
 %include 'mio.inc'
 
@@ -58,18 +58,17 @@ main:
 	xor		edx, edx			; where we will build the result
 	
 	mov		eax, [num_c]
-	shl		eax, 23
-	shr		eax, 30				; EAX = C[8:7]
+	shr		eax, 7
+	and		eax, 11b			; EAX = C[8:7]
 	and		eax, 10b			; EAX = C[8:7] and 10
 	
 	mov		edx, eax			; EDX = C[8:7] and 10
 	
 	
 	mov		eax, [num_a]
-	shl		eax, 24
-	shr		eax, 29				; EAX = A[7:5]
+	shr		eax, 5
+	and		eax, 111b			; EAX = A[7:5]
 	and		eax, 010b			; EAX = A[7:5] and 010
-	
 	
 	shl		edx, 3
 	add		edx, eax			; EDX = C[8:7] and 10, A[7:5] and 010
