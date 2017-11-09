@@ -13,31 +13,54 @@ section .text
 main:
 
 .beker_int:
-	mov		eax, str_beker_int	; ask for input
+	mov		eax, str_beker_int	; beker egy szamot decimalis egesz alakban
 	call	mio_writestr
 	call	read_dec_int
 	jc		.hibakezeles_int
 
-	call	write_int
-	call	write_hex
 	mov		ebx, eax
+	mov		eax, str_int_alak	; kiirjuk a beolvasott szamot decimalis egesz alakban
+	call	mio_writestr
+	mov		eax, ebx
+	call	write_int
+	
+	mov		eax, str_hex_alak	; kiirjuk a beolvasott szamot hexadecimalis alakban
+	call	mio_writestr
+	mov		eax, ebx
+	call	write_hex
 	
 .beker_hex:
-	mov		eax, str_beker_hex	; ask for input
+	mov		eax, str_beker_hex	; beker egy szamot hexadecimalis alakban
 	call	mio_writestr
 	call	read_hex
 	jc		.hibakezeles_hex
 	
-	call	write_int
-	call	write_hex
-	
 	mov		ecx, eax
-	mov		eax, str_ossz
+	mov		eax, str_int_alak	; kiirjuk a beolvasott szamot decimalis egesz alakban
 	call	mio_writestr
 	mov		eax, ecx
-	
-	add		eax, ebx
 	call	write_int
+	
+	mov		eax, str_hex_alak	; kiirjuk a beolvasott szamot hexadecimalis alakban
+	call	mio_writestr
+	mov		eax, ecx
+	call	write_hex
+	
+	mov		eax, str_ossz		; kiirjuk az osszeadasra vonatkozo szoveget
+	call	mio_writestr
+	call	mio_writeln
+	mov		eax, ecx
+	
+	add		ecx, ebx
+	
+	mov		eax, str_int_alak	; kiirjuk az osszeget decimalis egesz alakban
+	call	mio_writestr
+	mov		eax, ecx
+	call	write_int
+	
+	mov		eax, str_hex_alak	; kiirjuk az osszeget hexadecimalis alakban
+	call	mio_writestr
+	mov		eax, ecx
 	call	write_hex
 	
 	ret
@@ -166,7 +189,7 @@ write_hex:
 	push	ecx
 	push	edx
 	
-	mov		ebx, eax		; save original input in EBX
+	mov		ebx, eax		; move original input to EBX
 	mov		ecx, 8			; loop count
 	
 	mov		eax, str_hex_prefix
@@ -174,10 +197,12 @@ write_hex:
 	mov		eax, ebx
 	
 .loop_write:
-	shr		eax, 28			; shift first word to last 4 bits
+	rol		ebx, 4			; rotate word to end
+	mov		eax, ebx
+	and		eax, 1111b		; keep only last word
 	cmp		eax, 9
 	jg		.hex_letter
-	add		eax, '0'		; if hex digit is numeric, push accordingly
+	add		eax, '0'		; if hex digit is numeric, print accordingly
 	call	mio_writechar
 	jmp		.write_hex_iterate
 
@@ -187,8 +212,6 @@ write_hex:
 	call	mio_writechar
 	
 .write_hex_iterate:
-	shl		ebx, 4			; prepare next word
-	mov		eax, ebx
 	loop	.loop_write
 
 	mov		eax, 10
@@ -268,10 +291,12 @@ read_hex:
 	
 	
 section .data
-	str_ossz		db	'Osszeg: ', 0
+	str_ossz		db	'A beolvasott szamok osszege: ', 0
 	str_hiba		db	'Hiba: Rossz bemenet', 0
 	str_beker_int	db	'Adjon meg egy szamot egesz alakban: ', 0
 	str_beker_hex	db	'Adjon meg egy szamot hexadecimalis alakban: ', 0
 	str_hex_prefix	db	'0x', 0
+	str_int_alak	db	'A szam decimalis egesz alakban: ', 0
+	str_hex_alak	db	'A szam hexadecimalis alakban: ', 0
 
 section .bss
