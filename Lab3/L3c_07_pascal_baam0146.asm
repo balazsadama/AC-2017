@@ -1,7 +1,7 @@
 ; nev: Balazs Adam-Attila
 ; azonosito: baam0146
 ; csoport: 621
-; labor: L3 B 07
+; labor: L3 C 07 pascal
 ; Feladat: Készítsünk két assembly programot (NASM), amelyek beolvassák a szükséges karakterláncokat, kiírják a felhasznált szabályt (mint üzenetet) és a beolvasott karakterláncokat
 ; külön sorokba, majd előállítják és végül kiírják a művelet eredményét, ami szintén egy karakterlánc.
 ; A szabaly: "abcde" + [A-ból azok a karakterek, amelyek "" jelek között vannak (minden második " jel után az a szakasz befejeződik és egy újabb " kell ahhoz, hogy újabb szakasz
@@ -21,15 +21,17 @@ main:
 	mov		eax, str_be
 	call	mio_writestr
 	
-	mov		esi, str_A
-	call	read_str_pascal
+	mov		edi, str_A
+	call	read_str_pascal2
 	
-	mov		esi, str_A
+	mov		edi, str_A
 	call	write_str_pascal
 	
 	ret
 
 	
+	
+
 	
 	
 read_str_pascal:
@@ -38,7 +40,7 @@ read_str_pascal:
 	push	ecx
 	push	edx
 	
-	mov		ebx, esi		; elmentjuk a karakterlanc memoriabeli kezdocimet, hogy be tudjuk irni a hosszat
+	mov		ebx, edi		; elmentjuk a karakterlanc memoriabeli kezdocimet, hogy be tudjuk irni a hosszat
 	xor		ecx, ecx		; szamoljuk a beolvasott karaktereket
 	
 .loop_read:
@@ -49,7 +51,7 @@ read_str_pascal:
 	cmp		al, 13			; ha lenyomjak az 'enter' billentyut
 	je		.stop_read
 	mov		[esi], al
-	inc		si
+	inc		esi
 	inc		ecx				; karakterek szamat noveljuk
 	jmp		.loop_read
 	

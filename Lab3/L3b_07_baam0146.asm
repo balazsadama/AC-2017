@@ -16,6 +16,7 @@ main:
 	call	mio_writestr
 	call	mio_writeln
 	
+	
 	; read A
 	mov		eax, str_a
 	call	mio_writestr
@@ -162,19 +163,19 @@ write_bin:
 	
 
 
-; read positive hexadecimal number
+; beolvas pozitiv hexadecimalis szamot
 read_hex:
-	push	ebx				; save previous values
+	push	ebx				; elmentjuk az eredeti ertekeket
 	push	ecx
 	push	edx
-	xor		ebx, ebx		; where we build the number
+	xor		ebx, ebx		; itt epitjuk a szamot
 	
 .loop_read:
 	xor		eax, eax
 	call	mio_readchar
 	call	mio_writechar
 	
-	cmp		al, 13			; if enter is pressed
+	cmp		al, 13			; ha lenyomjak az 'enter' billentyut
 	je		.stop_read
 	
 	cmp		al, '0'
@@ -182,7 +183,7 @@ read_hex:
 	cmp		al, '9'
 	jg		.check_uppercase
 	
-	shl		ebx, 4			; shift left to add new digit
+	shl		ebx, 4			; balra tolunk, hogy az uj szamjegyet hozzaragasszuk
 	sub		al, '0'
 	add		ebx, eax
 	jmp		.loop_read
@@ -193,7 +194,7 @@ read_hex:
 	cmp		al, 'F'
 	jg		.check_lowercase
 	
-	shl		ebx, 4			; shift left to add new digit
+	shl		ebx, 4			; balra tolunk, hogy az uj szamjegyet hozzaragasszuk
 	sub		al, 'A'
 	add		al, 10
 	add		ebx, eax
@@ -205,14 +206,14 @@ read_hex:
 	cmp		al, 'f'
 	jg		.hiba
 	
-	shl		ebx, 4			; shift left to add new digit
+	shl		ebx, 4			; balra tolunk, hogy az uj szamjegyet hozzaragasszuk
 	sub		al, 'a'
 	add		al, 10
 	add		ebx, eax
 	jmp		.loop_read
 	
 .stop_read:
-	mov		eax, 10			; new line
+	mov		eax, 10			; uj sor
 	call	mio_writechar
 	mov		eax, ebx
 	pop		edx
@@ -225,7 +226,7 @@ read_hex:
 	pop		edx
 	pop		ecx
 	pop		ebx
-	stc						; set carry to signal error
+	stc						; beallitjuk a carry-t, hogy hibat jelezzunk
 	ret
 
 
