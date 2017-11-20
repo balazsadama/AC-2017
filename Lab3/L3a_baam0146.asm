@@ -128,9 +128,9 @@ read_hex:
 	je		.stop_read
 	
 	cmp		al, '0'
-	jl		.hiba
+	jb		.hiba
 	cmp		al, '9'
-	jg		.check_uppercase
+	ja		.check_uppercase
 	
 	shl		ebx, 4			; shift left to add new digit
 	sub		al, '0'
@@ -139,9 +139,9 @@ read_hex:
 	
 .check_uppercase:
 	cmp		al, 'A'
-	jl		.hiba
+	jb		.hiba
 	cmp		al, 'F'
-	jg		.check_lowercase
+	ja		.check_lowercase
 	
 	shl		ebx, 4			; shift left to add new digit
 	sub		al, 'A'
@@ -151,9 +151,9 @@ read_hex:
 	
 .check_lowercase:
 	cmp		al, 'a'
-	jl		.hiba
+	jb		.hiba
 	cmp		al, 'f'
-	jg		.hiba
+	ja		.hiba
 	
 	shl		ebx, 4			; shift left to add new digit
 	sub		al, 'a'

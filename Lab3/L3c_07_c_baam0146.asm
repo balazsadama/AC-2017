@@ -133,8 +133,7 @@ solve:
 	; ha idezojel zarva, akkor kiirjuk a koztuk levo karaktereket
 	dec		ebx				; jelezzuk, hogy vege az idezojelnek
 	
-	cmp		ecx, 0			; ha nincs karakter idezojelek kozott, akkor vizsgaljuk a kovetkezo karaktert
-	je		.loop_quote	
+	jecxz	.loop_quote		; ha nincs karakter idezojelek kozott, akkor vizsgaljuk a kovetkezo karaktert
 	
 	sub		esi, ecx		; visszalepunk a nyitott idezojel utani karakterre
 	sub		esi, 1
@@ -169,10 +168,10 @@ solve:
 	je		.end
 	
 	cmp		al, 'a'
-	jl		.add_to_res
+	jb		.add_to_res
 	
 	cmp		al, 'z'
-	jge		.add_to_res
+	jae		.add_to_res
 	
 	inc		al				; rakovetkezo beture helyettesitjuk
 .add_to_res:
