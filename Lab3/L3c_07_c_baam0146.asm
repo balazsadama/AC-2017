@@ -14,27 +14,25 @@ global main
 section .text
 main:
 
-	mov		eax, str_szabaly
-	call	mio_writestr
-	call	mio_writeln
-	
-	mov		eax, str_be
-	call	mio_writestr
-	
-	mov		edi, str_A
-	call	read_str_c
-	
-	mov		esi, str_A
-	call	write_str_c
-	
-	call	write_between_quotes
+	call	read_input
+	call	write_given_input
 	
 	call	solve
-	mov		eax, str_res
-	call	mio_writestr
-	call	mio_writeln
-	mov		esi, str_res
-	call	write_str_c
+	call	write_res
+	
+	ret
+	
+	; mov		esi, str_A
+	; call	write_str_c
+	
+	; call	write_between_quotes
+	
+	; call	solve
+	; mov		eax, str_res
+	; call	mio_writestr
+	; call	mio_writeln
+	; mov		esi, str_res
+	; call	write_str_c
 	
 	; mov		edi, str_A
 	; call	write_str_c
@@ -134,6 +132,10 @@ solve:
 	je		.start_quote	; ha 0 akkor idezojel nyitva
 	; ha idezojel zarva, akkor kiirjuk a koztuk levo karaktereket
 	dec		ebx				; jelezzuk, hogy vege az idezojelnek
+	
+	cmp		ecx, 0			; ha nincs karakter idezojelek kozott, akkor vizsgaljuk a kovetkezo karaktert
+	je		.loop_quote	
+	
 	sub		esi, ecx		; visszalepunk a nyitott idezojel utani karakterre
 	sub		esi, 1
 .between_quotes:
@@ -148,10 +150,39 @@ solve:
 	jmp		.loop_quote
 	
 .end_A:
-	xor		eax, eax
+	mov		al, 'e'
 	stosb
+	mov		al, 'd'
+	stosb
+	mov		al, 'c'
+	stosb
+	mov		al, 'b'
+	stosb
+	mov		al, 'a'
+	stosb
+
+	mov		esi, str_B
 	
-	call	mio_writeln
+.loop_B:
+	lodsb
+	cmp		al, 0
+	je		.end
+	
+	cmp		al, 'a'
+	jl		.add_to_res
+	
+	cmp		al, 'z'
+	jge		.add_to_res
+	
+	inc		al				; rakovetkezo beture helyettesitjuk
+.add_to_res:
+	stosb
+	jmp		.loop_B
+	
+.end:
+	xor		eax, eax		; null-terminalt
+	stosb
+	;call	mio_writeln
 	pop		edi
 	pop		esi
 	pop		edx
@@ -160,59 +191,66 @@ solve:
 	pop		eax
 	ret
 	
+
+read_input:
+	push	eax
+	push	edi
 	
-write_between_quotes:
-	push	eax				; elmentjuk az eredeti ertekeket
-	push	ebx
-	push	ecx
-	push	edx
+	mov		eax, str_be
+	call	mio_writestr
+	
+	mov		edi, str_A
+	call	read_str_c
+
+	mov		eax, str_be
+	call	mio_writestr
+	
+	mov		edi, str_B
+	call	read_str_c
+	
+	pop		edi
+	pop		eax
+	
+	ret
+	
+write_given_input:
+	push	eax
+	push	esi
+
+	mov		eax, str_szabaly
+	call	mio_writestr
+	call	mio_writeln
+	
+	mov		eax, 'A'
+	call	mio_writechar
+	mov		eax, '='
+	call	mio_writechar
+	mov		esi, str_A
+	call	write_str_c
+	
+	mov		eax, 'B'
+	call	mio_writechar
+	mov		eax, '='
+	call	mio_writechar
+	mov		esi, str_B
+	call	write_str_c
+	
+	pop		esi
+	pop		eax
+	ret
+	
+write_res:
 	push	esi
 	
-	xor		ebx, ebx		; 1 ha idezojel nyitva volt, kulonben 0
-	xor		ecx, ecx		; szamoljuk az idezojelek kozti karaktereket
-.loop_write:
-	lodsb
-	cmp		al, 0
-	je		.end
+	mov		esi, str_res
+	call	write_str_c
 	
-	cmp		al, '"'
-	je		.is_quote
-	
-	cmp		ebx, 0
-	je		.loop_write		; ha nincs idezojel nyitva, akkor vesszuk a kov. karaktert
-	inc		ecx				; kulonben noveljuk az idezojelek kozti karakterek szamat
-	jmp		.loop_write
-	
-.is_quote:
-	cmp		ebx, 0
-	je		.start_quote	; ha 0 akkor idezojel nyitva
-	; ha idezojel zarva, akkor kiirjuk a koztuk levo karaktereket
-	dec		ebx				; jelezzuk, hogy vege az idezojelnek
-	sub		esi, ecx		; visszalepunk a nyitott idezojel utani karakterre
-	sub		esi, 1
-.write_between:
-	lodsb
-	call	mio_writechar
-	loop	.write_between
-	inc		esi				; lep a zaro idezojel utan kovetkezo beture
-	jmp		.loop_write
-	
-.start_quote:
-	inc		ebx
-	jmp		.loop_write
-	
-.end:
-	call	mio_writeln
 	pop		esi
-	pop		edx
-	pop		ecx
-	pop		ebx
-	pop		eax
 	ret
 	
 section .data
 	str_be			db	'Adjon meg egy karakterlancot: ', 0
-	str_szabaly		db	'"abcde" + [A-bol azok a karakterek, amelyek "" jelek kozott vannak (minden masodik " jel utan az a szakasz befejezodik es egy ujabb " kell ahhoz, hogy ujabb szakasz nyiljon, valamint be is kell fejezodjon "-al, hogy ervenyes legyen)] + "edcba" + [B, minden kisbetut a rakovetkezo betuvel helyettesitjuk (kiveve a z-t, az marad)]', 0
+	str_szabaly		db	'A szabaly: "abcde" + [A-bol azok a karakterek, amelyek "" jelek kozott vannak (minden masodik " jel utan az a szakasz befejezodik es egy ujabb " kell ahhoz, hogy ujabb szakasz nyiljon, valamint be is kell fejezodjon "-al, hogy ervenyes legyen)] + "edcba" + [B, minden kisbetut a rakovetkezo betuvel helyettesitjuk (kiveve a z-t, az marad)]', 0
 	str_res			db	'abcde'
 section .bss
 	str_A		resb	256
