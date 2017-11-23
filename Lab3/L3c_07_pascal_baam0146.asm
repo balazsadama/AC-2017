@@ -14,40 +14,7 @@ global main
 section .text
 main:
 
-	mov		edi, str_res
-	mov		eax, [str_res_len]
-	stosb
-	mov		esi, str_res
-	call	write_str_pascal
-	call	mio_writeln
-	
-	mov		edi, str_res
-	add		edi, 6
-	xor		eax, eax
-	mov		al, 'e'
-	stosb
-	mov		al, 'd'
-	stosb
-	mov		al, 'c'
-	stosb
-	mov		al, 'b'
-	stosb
-	mov		al, 'a'
-	stosb
-	
-	mov		edi, str_res
-	;add		byte [str_res_len], 5	; noveljuk az eredmeny karakterlanc hosszat
-	;mov		eax, [str_res_len]
-	mov		eax, 11
-	stosb
-	
-	call	write_str_pascal
-	call	mio_writeln
-	
-	
-	
-	
-	
+
 	
 	
 	
@@ -64,7 +31,7 @@ main:
 	call	read_input
 	call	write_given_input
 	
-	call	solve
+	call	solve2
 	call	write_res
 	
 	ret
@@ -187,19 +154,17 @@ solve:
 	je		.start_quote	; ha 0 akkor idezojel nyitva
 	
 	; ha idezojel zarva, akkor kiirjuk a koztuk levo karaktereket
-	mov		[qotes], 0		; jelezzuk, hogy vege az idezojelnek
+	mov		byte [quotes], 0		; jelezzuk, hogy vege az idezojelnek
 	
 	
 
 	
 	;jecxz	.loop_quote		; ha nincs karakter idezojelek kozott, akkor vizsgaljuk a kovetkezo karaktert
 	cmp		edx, 0
-	loop	.loop_quote
+	je		.skip_write		; ha nincs karakter idezojelek kozott, akkor vizsgaljuk a kovetkezo karaktert
 	
 	
-	
-	
-	
+
 	
 	
 	sub		esi, edx		; visszalepunk a nyitott idezojel utani karakterre
@@ -222,7 +187,8 @@ solve:
 	jmp		.loop_quote
 	
 .start_quote:
-	mov		[qotes], 1
+	mov		byte [quotes], 1
+.skip_write:
 	dec		ecx
 	jmp		.loop_quote
 	
@@ -274,6 +240,129 @@ solve:
 	pop		ebx
 	pop		eax
 	ret
+	
+	
+	
+	
+	
+	
+	
+	
+	
+solve2:
+	push	eax				; elmentjuk az eredeti ertekeket
+	push	ebx
+	push	ecx
+	push	edx
+	push	esi
+	push	edi
+
+	; hozzaragasztjuk az idezojelek kozti karaktereket
+	mov		edi, str_res
+	add		edi, 6			; mert "0abcde"-vel kezdodik
+	
+	mov		esi, str_A
+	xor		ebx, ebx		; 1 ha idezojel nyitva volt, kulonben 0
+	xor		edx, edx		; szamoljuk az idezojelek kozti karaktereket
+	
+	xor		eax, eax
+	lodsb
+	mov		ecx, eax		; karakterek szama
+	
+	inc		ecx				; hogy helyesen mukodjon ugy, hogy eloszor csokkentjuk ecx-et, es utana hasonlitjuk 0-hoz
+	
+.loop_quote:
+	dec		ecx
+	jecxz	.end_A
+	lodsb
+	
+	cmp		al, '"'
+	je		.is_quote
+	
+	cmp		ebx, 0
+	je		.loop_quote		; ha nincs idezojel nyitva, akkor vesszuk a kov. karaktert
+	inc		edx				; kulonben noveljuk az idezojelek kozti karakterek szamat
+	jmp		.loop_quote
+	
+.is_quote:
+	cmp		ebx, 0
+	je		.start_quote	; ha 0 akkor idezojel nyitva
+	; ha idezojel zarva, akkor kiirjuk a koztuk levo karaktereket
+	dec		ebx				; jelezzuk, hogy vege az idezojelnek
+	
+	cmp		edx, 0
+	je		.loop_quote		; ha nincs karakter idezojelek kozott, akkor vizsgaljuk a kovetkezo karaktert
+	
+	push	ecx
+	mov		ecx, edx
+	
+	sub		esi, ecx		; visszalepunk a nyitott idezojel utani karakterre
+	sub		esi, 1
+.between_quotes:
+	lodsb
+	stosb
+	loop	.between_quotes
+	inc		esi				; lep a zaro idezojel utan kovetkezo beture
+	xor		edx, edx		; lenullazzuk az idezojelek kozti karakterek szamat
+	pop		ecx				; helyreallitjuk ECX eredeti erteket
+	jmp		.loop_quote
+	
+.start_quote:
+	inc		ebx
+	jmp		.loop_quote
+	
+.end_A:
+	mov		al, 'e'
+	stosb
+	mov		al, 'd'
+	stosb
+	mov		al, 'c'
+	stosb
+	mov		al, 'b'
+	stosb
+	mov		al, 'a'
+	stosb
+
+	mov		esi, str_B
+	lodsb
+	mov		ecx, eax
+	inc		ecx
+	
+.loop_B:
+	dec		ecx
+	jecxz	.end
+	lodsb
+	
+	cmp		al, 'a'
+	jb		.add_to_res
+	
+	cmp		al, 'z'
+	jae		.add_to_res
+	
+	inc		al				; rakovetkezo beture helyettesitjuk
+.add_to_res:
+	stosb
+	jmp		.loop_B
+	
+.end:
+	mov		eax, edi
+	sub		eax, str_res
+	mov		edi, str_res
+	stosb
+	;call	mio_writeln
+	pop		edi
+	pop		esi
+	pop		edx
+	pop		ecx
+	pop		ebx
+	pop		eax
+	ret
+	
+	
+	
+	
+	
+	
 	
 	
 	
@@ -342,7 +431,7 @@ section .data
 	str_be			db	'Adjon meg egy karakterlancot: ', 0
 	str_szabaly		db	'"abcde" + [A-bol azok a karakterek, amelyek "" jelek kozott vannak (minden masodik " jel utan az a szakasz befejezodik es egy ujabb " kell ahhoz, hogy ujabb szakasz nyiljon, valamint be is kell fejezodjon "-al, hogy ervenyes legyen)] + "edcba" + [B, minden kisbetut a rakovetkezo betuvel helyettesitjuk (kiveve a z-t, az marad)]', 0
 	str_res			db	'0abcde'	; az elso karakter folul lesz irva a hosszal
-	;str_res_len		db	5			; az eredmeny karakterlanc hossza
+	str_res_len		db	5			; az eredmeny karakterlanc hossza
 	quotes			db	0
 section .bss
 	str_A		resb	256
