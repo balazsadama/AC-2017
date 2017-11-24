@@ -14,32 +14,15 @@ global main
 section .text
 main:
 
-
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-
-
 	call	read_input
 	call	write_given_input
 	
-	call	solve2
+	call	solve
 	call	write_res
 	
 	ret
 
-	
-	
 
-	
 	
 read_str_pascal:
 	push	eax				; elmentjuk az eredeti ertekeket
@@ -105,151 +88,9 @@ write_str_pascal:
 	ret
 	
 	
+
+	
 solve:
-	push	eax				; elmentjuk az eredeti ertekeket
-	push	ebx
-	push	ecx
-	push	edx
-	push	esi
-	push	edi
-	
-	
-	mov		edi, str_res
-	add		edi, 6			; mert "0abcde" a str_res kezdeti erteke
-
-	
-	mov		esi, str_A		; beallitjuk a forras cimet
-	
-	xor		eax, eax		; a feldolgozando karakterlanc hosszat az ECX-be tesszuk
-	lodsb
-	mov		ecx, eax
-	
-	mov		ebx, 5			; eredmeny karakterlanc hossza
-	xor		edx, edx		; szamoljuk az idezojelek kozti karaktereket
-	
-.loop_quote:
-	jecxz	.end_A
-	lodsb
-	
-	cmp		al, '"'
-	je		.is_quote
-	
-	cmp		ebx, 0
-	jne		.count_chars
-	
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;loop	.loop_quote		; ha nincs idezojel nyitva, akkor vesszuk a kov. karaktert
-	dec		ecx
-	jmp		.loop_quote
-	
-.count_chars:
-	inc		edx				; kulonben noveljuk az idezojelek kozti karakterek szamat
-	dec		ecx
-	jmp		.loop_quote
-	
-.is_quote:
-	push	ebx				; quotes = 0 ha nincs zarojel nyitva, kulonben 1
-	mov		ebx, [quotes]
-	cmp		ebx, 0
-	pop		ebx
-	je		.start_quote	; ha 0 akkor idezojel nyitva
-	
-	; ha idezojel zarva, akkor kiirjuk a koztuk levo karaktereket
-	mov		byte [quotes], 0		; jelezzuk, hogy vege az idezojelnek
-	
-	
-
-	
-	;jecxz	.loop_quote		; ha nincs karakter idezojelek kozott, akkor vizsgaljuk a kovetkezo karaktert
-	cmp		edx, 0
-	je		.skip_write		; ha nincs karakter idezojelek kozott, akkor vizsgaljuk a kovetkezo karaktert
-	
-	
-
-	
-	
-	sub		esi, edx		; visszalepunk a nyitott idezojel utani karakterre
-	sub		esi, 1
-	
-	push	ecx
-	mov		ecx, edx
-.between_quotes:
-	lodsb
-	stosb
-	;call	mio_writechar		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	
-	inc		ebx				; noveljuk az eredmeny karakterlanc hosszat
-	dec		ecx
-	jmp		.loop_quote
-	
-	inc		esi				; lep a zaro idezojel utan kovetkezo beture
-	pop		ecx				; helyreallitjuk ecx erteket
-	xor		edx, edx		; az idezojelek kozti karakterek szamat lenullazzuk, hiszen kiirtuk oket
-	dec		ecx
-	jmp		.loop_quote
-	
-.start_quote:
-	mov		byte [quotes], 1
-.skip_write:
-	dec		ecx
-	jmp		.loop_quote
-	
-.end_A:
-	mov		al, 'e'
-	stosb
-	mov		al, 'd'
-	stosb
-	mov		al, 'c'
-	stosb
-	mov		al, 'b'
-	stosb
-	mov		al, 'a'
-	stosb
-	add		ebx, 5	; noveljuk az eredmeny karakterlanc hosszat
-
-	; feldolgozzuk a B karakterlancot
-	mov		esi, str_B
-	xor		eax, eax		; a karakterlanc hosszat az ECX-be tesszuk
-	lodsb
-	mov		ecx, eax
-.loop_B:
-	jecxz	.end
-	lodsb
-	
-	cmp		al, 'a'
-	jb		.add_to_res
-	
-	cmp		al, 'z'
-	jae		.add_to_res
-	
-	inc		al				; rakovetkezo beture helyettesitjuk
-.add_to_res:
-	stosb
-	inc		ebx				; noveljuk az eredmeny karakterlanc hosszat
-	dec		ecx
-	dec		ecx
-	jmp		.loop_quote
-	
-.end:
-	mov		edi, str_res
-	mov		eax, ebx
-	stosb
-	;call	mio_writeln
-	pop		edi
-	pop		esi
-	pop		edx
-	pop		ecx
-	pop		ebx
-	pop		eax
-	ret
-	
-	
-	
-	
-	
-	
-	
-	
-	
-solve2:
 	push	eax				; elmentjuk az eredeti ertekeket
 	push	ebx
 	push	ecx
@@ -349,7 +190,7 @@ solve2:
 	sub		eax, str_res
 	mov		edi, str_res
 	stosb
-	;call	mio_writeln
+	
 	pop		edi
 	pop		esi
 	pop		edx
@@ -357,14 +198,6 @@ solve2:
 	pop		ebx
 	pop		eax
 	ret
-	
-	
-	
-	
-	
-	
-	
-	
 	
 	
 	

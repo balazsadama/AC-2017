@@ -11,7 +11,7 @@ global main
 section .text
 main:
 
-	mov		eax, str_beker_hex	; ask for input
+	mov		eax, str_beker_hex	; bekeri a bemenetet
 	call	mio_writestr
 	call	mio_writeln
 	
@@ -29,17 +29,17 @@ main:
 	jc		.hibakezeles_hex1
 	
 	mov		ecx, eax
-	mov		eax, str_a				; print A
+	mov		eax, str_a				; ki A
 	call	mio_writestr
 	mov		eax, ebx
 	call	write_bin
 	
-	mov		eax, str_b				; print B
+	mov		eax, str_b				; ki B
 	call	mio_writestr
 	mov		eax, ecx
 	call	write_bin
 	
-	mov		eax, str_ab				; print A + B
+	mov		eax, str_ab				; ki A + B
 	call	mio_writestr
 	mov		eax, ebx
 	add		eax, ecx
@@ -65,18 +65,18 @@ main:
 	
 	
 	
-	; write in binary form from EAX
+	; kiirja az EAX-ben levo erteket binaris alakban
 write_bin:
 	push	eax
 	push	ebx
 	push	ecx
 	push	edx
 	
-	mov		ebx, eax	; eax needed to write characters
-	mov		ecx, 32		; set loop counter
+	mov		ebx, eax	; eax-et hasznaljuk kiirasnal
+	mov		ecx, 32		; beallitjuk loop counter-t
 
 .bin_loop:
-	shl		ebx, 1			; shift digit into carry
+	shl		ebx, 1			; eltoljuk a bitet a Carry-be
 	jc		.digit_one
 	mov		al, '0'
 	jmp		.write_digit
@@ -87,16 +87,16 @@ write_bin:
 .write_digit:
 	call	mio_writechar
 	
-	; check if space needs to be printed for grouping digits by 4
-	mov		eax, ecx	; move dividend(loop count) to EAX
+	; ellenorzi, hogy kell-e szokozt irjon
+	mov		eax, ecx	; osztandot eax-be tesszuk
 	add		eax, 3
 	cdq
-	push	ebx			; save value to use for division by 4
+	push	ebx			; elmetnjuk az eredeti erteket, hogy osszunk 4-gyel
 	mov		ebx, 4
 	idiv	ebx
-	pop		ebx			; restore original value
+	pop		ebx			; helyreallitjuk az eredeti erteket
 	
-	cmp		edx, 0		; if dividable by 4, then space needs to be printed
+	cmp		edx, 0		; ha oszthato 4-gyel, akkor kiirunk egy szokozt
 	jne		.loop_write
 	mov		al, ' '
 	call	mio_writechar
@@ -112,19 +112,19 @@ write_bin:
 	ret
 	
 	
-	; read positive hexadecimal number
+	; beolvas egy hexadecimalis szamot
 read_hex:
-	push	ebx				; save previous values
+	push	ebx				; elmetnjuk az eredeti ertekeket
 	push	ecx
 	push	edx
-	xor		ebx, ebx		; where we build the number
+	xor		ebx, ebx		; itt epitjuk a szamot
 	
 .loop_read:
 	xor		eax, eax
 	call	mio_readchar
 	call	mio_writechar
 	
-	cmp		al, 13			; if enter is pressed
+	cmp		al, 13			; ha enter le van nyomva
 	je		.stop_read
 	
 	cmp		al, '0'
@@ -132,7 +132,7 @@ read_hex:
 	cmp		al, '9'
 	ja		.check_uppercase
 	
-	shl		ebx, 4			; shift left to add new digit
+	shl		ebx, 4			; balra toljuk hogy kovetkezo szamjegyet hozzaadhassuk
 	sub		al, '0'
 	add		ebx, eax
 	jmp		.loop_read
@@ -143,7 +143,7 @@ read_hex:
 	cmp		al, 'F'
 	ja		.check_lowercase
 	
-	shl		ebx, 4			; shift left to add new digit
+	shl		ebx, 4			; balra toljuk hogy kovetkezo szamjegyet hozzaadhassuk
 	sub		al, 'A'
 	add		al, 10
 	add		ebx, eax
@@ -155,14 +155,14 @@ read_hex:
 	cmp		al, 'f'
 	ja		.hiba
 	
-	shl		ebx, 4			; shift left to add new digit
+	shl		ebx, 4			; balra toljuk hogy kovetkezo szamjegyet hozzaadhassuk
 	sub		al, 'a'
 	add		al, 10
 	add		ebx, eax
 	jmp		.loop_read
 	
 .stop_read:
-	mov		eax, 10			; new line
+	mov		eax, 10			; uj sor
 	call	mio_writechar
 	mov		eax, ebx
 	pop		edx
@@ -175,7 +175,7 @@ read_hex:
 	pop		edx
 	pop		ecx
 	pop		ebx
-	stc						; set carry to signal error
+	stc						; beallitjuk a carry-t, hogy hibat jelezzunk
 	ret
 
 	

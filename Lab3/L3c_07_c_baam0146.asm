@@ -22,21 +22,6 @@ main:
 	
 	ret
 	
-	; mov		esi, str_A
-	; call	write_str_c
-	
-	; call	write_between_quotes
-	
-	; call	solve
-	; mov		eax, str_res
-	; call	mio_writestr
-	; call	mio_writeln
-	; mov		esi, str_res
-	; call	write_str_c
-	
-	; mov		edi, str_A
-	; call	write_str_c
-	
 	ret
 
 	
@@ -106,7 +91,7 @@ solve:
 	push	esi
 	push	edi
 
-	; hozzaragasztjuk az idezojelek kozti karaktereket
+
 	mov		edi, str_res
 	add		edi, 5			; mert "abcde"-vel kezdodik
 	
@@ -123,7 +108,7 @@ solve:
 	je		.is_quote
 	
 	cmp		ebx, 0
-	je		.loop_quote		; ha nincs idezojel nyitva, akkor vesszuk a kov. karaktert
+	je		.loop_quote		; ha nincs idezojel nyitva, akkor vesszuk a kovetkezo karaktert
 	inc		ecx				; kulonben noveljuk az idezojelek kozti karakterek szamat
 	jmp		.loop_quote
 	
@@ -181,7 +166,7 @@ solve:
 .end:
 	xor		eax, eax		; null-terminalt
 	stosb
-	;call	mio_writeln
+	
 	pop		edi
 	pop		esi
 	pop		edx

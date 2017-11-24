@@ -4,6 +4,7 @@
 ; labor: L3 B 07
 ; Feladat: Keszítsünk assembly programot, amely beolvas három előjel nélküli egész számot, 32 bites egészként, kiírja a felhasznált szabályt és
 ; a beolvasott értékeket bináris formában, majd előállítja és végül kiírja bináris formában a művelet eredményét.
+; A szabály: C[8:7] AND 10, A[7:5] AND 010, 0, B[11:11] AND A[23:23], A[26:6], B[12:9] + A[31:28]
 
 %include 'mio.inc'
 
@@ -17,25 +18,25 @@ main:
 	call	mio_writeln
 	
 	
-	; read A
+	; beolvas A
 	mov		eax, str_a
 	call	mio_writestr
 	call	read_hex
 	mov		[num_a], eax
 	
-	; read B
+	; beolvas B
 	mov		eax, str_b
 	call	mio_writestr
 	call	read_hex
 	mov		[num_b], eax
 	
-	; read C
+	; beolvas C
 	mov		eax, str_c
 	call	mio_writestr
 	call	read_hex
 	mov		[num_c], eax
 	
-	; write expression and given input
+	; kiirja a kifejezest es a megadott bemenetet
 	mov		eax, str_expr
 	call	mio_writestr
 	call	mio_writeln
@@ -56,7 +57,7 @@ main:
 	call	write_bin
 	
 	
-	xor		edx, edx			; where we will build the result
+	xor		edx, edx			; itt epitjuk az eredmenyt
 	
 	mov		eax, [num_c]
 	shr		eax, 7
@@ -115,18 +116,18 @@ main:
 	ret
 
 
-; write in binary form from EAX
+; EAX tartalmat kiirja binaris alakban
 write_bin:
 	push	eax
 	push	ebx
 	push	ecx
 	push	edx
 	
-	mov		ebx, eax	; eax needed to write characters
-	mov		ecx, 32		; set loop counter
+	mov		ebx, eax	; eax-et hasznaljuk kiirasnal
+	mov		ecx, 32		; beallitjuk loop counter-t
 
 .bin_loop:
-	shl		ebx, 1			; shift digit into carry
+	shl		ebx, 1			; eltoljuk a bitet a Carry-be
 	jc		.digit_one
 	mov		al, '0'
 	jmp		.write_digit
@@ -137,16 +138,16 @@ write_bin:
 .write_digit:
 	call	mio_writechar
 	
-	; check if space needs to be printed for grouping digits by 4
-	mov		eax, ecx	; move dividend(loop count) to EAX
+	; ellenorzi, hogy kell-e szokozt irjon
+	mov		eax, ecx	; osztandot eax-be tesszuk
 	add		eax, 3
 	cdq
-	push	ebx			; save value to use for division by 4
+	push	ebx			; elmetnjuk az eredeti erteket, hogy osszunk 4-gyel
 	mov		ebx, 4
 	idiv	ebx
-	pop		ebx			; restore original value
+	pop		ebx			; helyreallitjuk az eredeti erteket
 	
-	cmp		edx, 0		; if dividable by 4, then space needs to be printed
+	cmp		edx, 0		; ha oszthato 4-gyel, akkor kiirunk egy szokozt
 	jne		.loop_write
 	mov		al, ' '
 	call	mio_writechar
@@ -160,6 +161,7 @@ write_bin:
 	pop		ebx
 	pop		eax
 	ret
+	
 	
 
 
