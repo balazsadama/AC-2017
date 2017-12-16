@@ -103,7 +103,7 @@ ReadInt:
 	
 	cmp		bl, '-'
 	jne		.skipNegative
-	mov		BYTE [esp + 10], bl; hogy a vegen tudjuk, hogy kell-e negalni a szamot
+	mov		BYTE [esp], bl; hogy a vegen tudjuk, hogy kell-e negalni a szamot
 	inc		edx
 	jmp		.loop_build
 	
@@ -124,16 +124,28 @@ ReadInt:
 	
 .error:
 	stc
-	jmp		.positive
+	jmp		.pop_return
 	
 .end:
-	mov		BYTE bl, [esp + 10]
+	mov		BYTE bl, [esp]
 	cmp		bl, '-'
-	jne		.positive
+	jne		.positive			; ha nem volt minusz jel megadva a szam elejen, akkor pozitivkent kezeljuk
+	
+	cmp		eax, 0x80000000
+	ja		.error				; ha negativ iranyban tulcsordult, akkor hiba
+	
 	neg		eax
 	clc
+	jmp		.pop_return
 	
 .positive:
+	clc
+	
+	cmp		eax, 0x80000000		; ha pozitiv iranyban tulcsordult, akkor hiba
+	jae		.error
+	clc
+	
+.pop_return:
 	mov		esp, ebp
     pop		ebp
 	
@@ -141,5 +153,4 @@ ReadInt:
 	pop		ecx
 	pop		ebx
 	
-	clc
 	ret
