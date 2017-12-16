@@ -124,7 +124,7 @@ ReadInt:
 	
 .error:
 	stc
-	jmp		.pop_return
+	jmp		.positive
 	
 .end:
 	mov		BYTE bl, [esp + 10]
@@ -134,9 +134,6 @@ ReadInt:
 	clc
 	
 .positive:
-	clc
-	
-.pop_return:
 	mov		esp, ebp
     pop		ebp
 	
@@ -144,4 +141,5 @@ ReadInt:
 	pop		ecx
 	pop		ebx
 	
+	clc
 	ret
