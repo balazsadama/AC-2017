@@ -18,7 +18,6 @@
 
 %include 'mio.inc'
 
-global main
 
 global ReadInt
 global WriteInt
@@ -34,58 +33,14 @@ global ReadHex64
 global WriteHex64
 
 section .text
-main:
 
- .repeat_ReadInt:
-	; clc
-	; call	ReadInt
-	; jc		.hiba_ReadInt
 	
-	; call	mio_writeln
-	; call	WriteInt
 	
- .repeat_ReadBin:
-	; call	mio_writeln
-	; clc
-	; call	ReadBin
-	; jc		.hiba_ReadBin
 	
-	; call	mio_writeln
-	; call	WriteBin
 	
-.repeat_ReadHex:
-	; call	ReadHex
-	; jc		.hiba_ReadHex
 	
-	; call	mio_writeln
-	; call	WriteHex
 	
-	; call	ReadInt64
-	; call	mio_writeln
-	; call	WriteInt64
 	
-	; call	ReadBin64
-	; call	mio_writeln
-	; call	WriteBin64
-	
-	call	ReadHex64
-	call	mio_writeln
-	call	WriteHex64
-	
-	ret
-	
-.hiba_ReadInt:
-	mov		eax, 0x69
-	jmp		.repeat_ReadInt
-
-.hiba_ReadBin:
-	mov		eax, 0x70
-	jmp		.repeat_ReadBin
-	
-.hiba_ReadHex:
-	call	mio_writeln
-	mov		eax, 0x71
-	jmp		.repeat_ReadBin
 	
 	
 ReadInt:
@@ -169,7 +124,6 @@ ReadInt:
 	mov		BYTE bl, [esp]
 	cmp		bl, '-'
 	jne		.positive			; ha nem volt minusz jel megadva a szam elejen, akkor pozitivkent kezeljuk
-	
 	cmp		eax, 0x80000000
 	ja		.error				; ha negativ iranyban tulcsordult, akkor hiba
 	
@@ -179,7 +133,6 @@ ReadInt:
 	
 .positive:
 	clc
-	
 	cmp		eax, 0x80000000		; ha pozitiv iranyban tulcsordult, akkor hiba
 	jae		.error
 	clc
@@ -193,10 +146,6 @@ ReadInt:
 	pop		ebx
 	
 	ret
-	
-	
-	
-	
 	
 WriteInt:
 	push	eax				; elmentjuk az eredeti ertekeket
@@ -231,18 +180,12 @@ WriteInt:
 	jmp		.from_stack
 	
 .stop:							; helyreallitja az eredeti ertekeket
-	mov		eax, 10
-	call	mio_writechar		; uj sor
 	pop		edx
 	pop		ecx
 	pop		ebx
 	pop		eax
 	ret
 
-	
-	
-	
-	
 ReadBin:
 	push	ebx
 	push	ecx
@@ -320,19 +263,11 @@ ReadBin:
 .pop_return:
 	mov		esp, ebp
     pop		ebp
-	
 	pop		edx
 	pop		ecx
 	pop		ebx
-	
 	ret
-	
-	
-	
-	
-	
-	
-	
+
 WriteBin:
 	push	eax
 	push	ebx
@@ -377,8 +312,6 @@ WriteBin:
 	pop		eax
 	ret
 	
-	
-	
 ReadHex:
 	push	ebx
 	push	ecx
@@ -418,26 +351,21 @@ ReadHex:
 	dec		ecx					; kitorolt karakter miatt
 	jmp		.loop_read
 	
-	
 .end_read:
 	xor		ebx, ebx			; hogy kesobb osszeadasnal ne legyen szemet ertek benne
 	xor		edx, edx			; szamoljuk a feldolgozott karaktereket
 	xor		eax, eax			; epitjuk a szamot
-	
 	cmp		ecx, 8
 	jg		.error				; ha tul hosszu a szam, akkor hiba
 	
 .loop_build:
 	cmp		edx, ecx
 	je		.end
-	
 	mov		BYTE bl, [esp + edx]; betoltjuk az elso karaktert
 	cmp		bl, '0'
 	jb		.error
-	
 	cmp		bl, '9'
 	ja		.check_uppercase
-	
 	sub		bl, '0'				; ha 0-9 kozti karakter
 	jmp		.good_value
 	
@@ -461,14 +389,12 @@ ReadHex:
 	add		bl, 10
 	jmp		.good_value
 	
-	
 .good_value:
 	shl		eax, 4				; balra tolunk, hogy az uj szamjegyet hozzaragasszuk
 	add		eax, ebx
 
 	inc		edx
 	jmp		.loop_build
-	
 	
 .error:
 	stc
@@ -480,13 +406,10 @@ ReadHex:
 .pop_return:
 	mov		esp, ebp
     pop		ebp
-	
 	pop		edx
 	pop		ecx
 	pop		ebx
-	
 	ret	
-	
 	
 WriteHex:
 	push	eax				; elmentjuk az eredeti ertekeket
@@ -520,11 +443,7 @@ WriteHex:
 	pop		ebx
 	pop		eax
 	ret
-	
-	
-	
-	
-	
+
 ReadInt64:
 	push	ebx
 	push	ecx
@@ -532,7 +451,6 @@ ReadInt64:
 	push	esi
 	
 	xor		ecx, ecx			; szamoljuk, hogy hany karakter volt eddig beolvasva
-	
 	push	ebp					; a veremben "lokalisan memoriat foglalunk"
     mov		ebp, esp
 	sub		esp, 20				; max 19 szamjegyes lehet + elojel = 20 karakter = 20 byte
@@ -543,10 +461,8 @@ ReadInt64:
 	je		.end_read
 	call	mio_writechar
 	inc		ecx					; noveljuk a beolvasott karakterek szamat
-	
 	cmp		al, 0x08			; ha backspace
 	je		.backspace
-	
 	cmp		ecx, 20
 	jg		.loop_read			; ha mar tobb mint 20 karaktert olvastunk be, akkor azt nem taroljuk
 	
@@ -555,7 +471,6 @@ ReadInt64:
 	
 .backspace:
 	jecxz	.loop_read			; ha nincs karakter a kepernyon, akkor a backspace-nek nincs hatasa
-	
 	mov		al, 0x20			; space
 	call	mio_writechar
 	mov		al, 0x08			; backspace
@@ -573,13 +488,11 @@ ReadInt64:
 	xor		eax, eax			; epitjuk a szamot
 	xor		esi, esi			; szamoljuk a feldolgozott karaktereket
 	
-	
 .loop_build:
 	cmp		esi, ecx
 	je		.end
 	
 	mov		BYTE bl, [esp + esi]; betoltjuk az elso karaktert
-	
 	cmp		bl, '-'
 	jne		.skipNegative
 	mov		BYTE [esp], bl		; hogy a vegen tudjuk, hogy kell-e negalni a szamot
@@ -606,7 +519,7 @@ ReadInt64:
 	mov		ecx, 10
 	mul		ecx					; EDX:EAX = EAX * 10
 	pop		ecx
-	; jo		.error				; ha tulcsordulas tortent, akkor hiba
+	
 	add		eax, ebx			; hozzaadjuk az uj szamjegyet
 	jnc		.dont_add
 	add		edx, 1
@@ -626,9 +539,6 @@ ReadInt64:
 	cmp		bl, '-'
 	jne		.positive			; ha nem volt minusz jel megadva a szam elejen, akkor pozitivkent kezeljuk
 	
-	
-	; cmp		edx, 0x7fffffff
-	; ja		.error				; ha negativ iranyban tulcsordult, akkor hiba
 	cmp		edx, 0x80000000
 	ja		.error
 	
@@ -637,15 +547,13 @@ ReadInt64:
 	not		edx
 	jnc		.skip_add
 	add		edx, 1
+	
 .skip_add:
 	clc
 	jmp		.pop_return
 	
 .positive:
 	clc
-	
-	; cmp		edx, 0x7fffffff		; ha pozitiv iranyban tulcsordult, akkor hiba
-	; ja		.error
 	cmp		edx, 0x80000000		; ha pozitiv iranyban tulcsordult, akkor hiba
 	jae		.error
 	clc
@@ -660,7 +568,6 @@ ReadInt64:
 	pop		ebx
 	
 	ret
-	
 	
 WriteInt64:
 	push	eax					; elmentjuk az eredeti ertekeket
@@ -682,6 +589,7 @@ WriteInt64:
 	add		eax, 1
 	not		edx
 	adc		edx, 0
+	
 .to_stack:
 	cmp		eax, 0
 	jne		.upper
@@ -713,9 +621,6 @@ WriteInt64:
 	pop		ebx
 	pop		eax
 	ret
-	
-	
-	
 	
 ReadBin64:
 	push	ebx
@@ -757,7 +662,6 @@ ReadBin64:
 	dec		ecx					; kitorolt karakter miatt
 	jmp		.loop_read
 	
-	
 .end_read:
 	xor		ebx, ebx			; hogy kesobb osszeadasnal ne legyen szemet ertek benne
 	xor		edx, edx			; epitjuk a szamot
@@ -795,25 +699,18 @@ ReadBin64:
 .pop_return:
 	mov		esp, ebp
     pop		ebp
-	
 	pop		esi
 	pop		ecx
 	pop		ebx
-	
 	ret
-	
 	
 WriteBin64:
 	push	eax
 	mov		eax, edx
 	call	WriteBin
-	mov		al, ' '
-	call	mio_writechar
 	pop		eax
 	call	WriteBin
 	ret
-	
-	
 	
 ReadHex64:
 	push	ebx
@@ -821,7 +718,6 @@ ReadHex64:
 	push	esi
 	
 	xor		ecx, ecx			; szamoljuk, hogy hany karakter volt eddig beolvasva
-	
 	push	ebp					; a veremben "lokalisan memoriat foglalunk"
     mov		ebp, esp
 	sub		esp, 16				; max 16 karaktert adhat meg a felhasznalo
@@ -852,7 +748,6 @@ ReadHex64:
 	dec		ecx					; backspace miatt
 	dec		ecx					; kitorolt karakter miatt
 	jmp		.loop_read
-	
 	
 .end_read:
 	cmp		ecx, 16
@@ -923,11 +818,9 @@ ReadHex64:
 .pop_return:
 	mov		esp, ebp
     pop		ebp
-	
 	pop		esi
 	pop		ecx
 	pop		ebx
-	
 	ret	
 	
 WriteHex64:

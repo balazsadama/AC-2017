@@ -13,7 +13,6 @@
 
 %include 'mio.inc'
 
-global main
 
 global ReadStr
 global ReadLnStr
@@ -22,11 +21,6 @@ global WriteLnStr
 global NewLine
 
 section .text
-main:
-
-	call	read_str1
-	;call	read_strLn1
-	ret
 	
 	
 	
@@ -126,57 +120,5 @@ NewLine:
 	call	mio_writeln
 	ret
 	
-read_str1:
-	pushad
-	
-.loop_read:
-	mov		edi, str1
-	mov		ecx, 9
-	call	ReadStr
-	jc		.hiba
-	call	mio_writeln
-	
-	mov		esi, str1
-	call	WriteStr
-	call	mio_writeln
-	
-	popad
-	ret
-	
-.hiba:
-	call	mio_writeln
-	push	esi
-	mov		esi, str_hiba
-	call	WriteStr
-	call	mio_writeln
-	pop		esi
-	jmp		.loop_read
-	
 
-read_strLn1:
-	pushad
-	
-.loop_read:
-	mov		edi, str1
-	mov		ecx, 9
-	call	ReadLnStr
-	jc		.hiba
-	
-	mov		esi, str1
-	call	WriteLnStr
-	
-	popad
-	ret
-	
-.hiba:
-	push	esi
-	mov		esi, str_hiba
-	call	WriteLnStr
-	pop		esi
-	jmp		.loop_read
-	
-section .data
-	str_hiba	db		'Hiba', 0
 
-section .bss
-	str1		resb	256

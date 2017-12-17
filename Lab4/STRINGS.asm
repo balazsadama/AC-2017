@@ -19,43 +19,6 @@ global StrUpper
 global StrLower
 global StrCompact
 
-section .text
-main:
-
-	mov		esi, str1
-	call	WriteStr
-	call	mio_writeln
-	
-	; call	StrLen
-	
-	; call	StrUpper
-	; call	WriteStr
-	; call	mio_writeln
-	
-	; call	StrLower
-	; call	WriteStr
-	; call	mio_writeln
-	
-	mov		esi, str2
-	call	WriteStr
-	call	mio_writeln
-	
-	; mov		esi, str1
-	; mov		edi, str2
-	
-	; call	StrCat
-	; mov		esi, str2
-	; call	WriteStr
-	; call	mio_writeln
-	
-	mov		esi, str1
-	mov		edi, str2
-	call	StrCompact
-	mov		esi, str2
-	call	WriteStr
-	call	mio_writeln
-
-	ret
 	
 	
 	
@@ -175,9 +138,9 @@ StrCompact:
 	lodsb
 	
 	cmp		al, 0
-	jmp		.end
+	je		.end
 	
-	cmp		al, 0x20
+	cmp		al, 32
 	je		.iterate
 	
 	cmp		al, 9
@@ -200,13 +163,8 @@ StrCompact:
 	
 	
 	
-	
-	
-	
-	
-	
-	
-	WriteStr:
+
+WriteStr:
 	pushad					; elmentjuk az eredeti ertekeket
 	
 .loop_write:
@@ -220,9 +178,3 @@ StrCompact:
 	popad
 	ret
 	
-	
-	
-	
-section .data
-	str1	db	'Ez egy tesztelo', 8, 9, ' szoveg', 0
-	str2	db	'uj String ', 0, 'es meg berakok szoveget h tobb helyet foglaljon le neki'
