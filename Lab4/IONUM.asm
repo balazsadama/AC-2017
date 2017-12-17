@@ -60,7 +60,11 @@ main:
 	; call	mio_writeln
 	; call	WriteHex
 	
-	call	ReadInt64
+	; call	ReadInt64
+	; call	mio_writeln
+	; call	WriteInt64
+	
+	call	ReadBin64
 	
 	ret
 	
@@ -196,31 +200,31 @@ WriteInt:
 
 	push	-1				; megallasi feltetel
 	cmp		eax, 0
-	jge		to_stack		; ha pozitiv, nem irjuk ki a '-' jelet
+	jge		.to_stack		; ha pozitiv, nem irjuk ki a '-' jelet
 	push	eax
 	mov		eax, '-'
 	call	mio_writechar
 	pop		eax
 	neg		eax
 	
-to_stack:
+.to_stack:
 	xor		edx, edx			; EDX-et nullara allitjuk, hogy jol osszon
 	mov		ebx, 10				; tizzel osztunk, hogy az utolso szamjegyet kapjuk maradekkent
 	div		ebx	
 	add		edx, 48				; karakterre alakitjuk szamjegybol
 	push	edx
 	cmp		eax, 0
-	je		from_stack
-	jmp		to_stack
+	je		.from_stack
+	jmp		.to_stack
 	
-from_stack:
+.from_stack:
 	pop		eax
 	cmp		eax, -1
-	je		stop
+	je		.stop
 	call	mio_writechar
-	jmp		from_stack
+	jmp		.from_stack
 	
-stop:							; helyreallitja az eredeti ertekeket
+.stop:							; helyreallitja az eredeti ertekeket
 	mov		eax, 10
 	call	mio_writechar		; uj sor
 	pop		edx
@@ -654,10 +658,145 @@ ReadInt64:
 	ret
 	
 	
+WriteInt64:
+	push	eax					; elmentjuk az eredeti ertekeket
+	push	ebx
+	push	ecx
+	push	edx
+	
+	mov		ebx, 10				; tizzel osztunk, hogy az utolso szamjegyet kapjuk maradekkent
+
+	push	-1					; megallasi feltetel
+	cmp		edx, 0
+	jge		.to_stack			; ha pozitiv, nem irjuk ki a '-' jelet
+	push	eax
+	mov		eax, '-'
+	call	mio_writechar
+	pop		eax
+	
+	not		eax					; ha negativ, akkor pizitivva alakitjuk
+	add		eax, 1
+	not		edx
+	adc		edx, 0
+.to_stack:
+	cmp		eax, 0
+	jne		.upper
+	cmp		edx, 0
+	jne		.upper
+	jmp		.from_stack
+
+.upper:
+	push	eax					; elmentjuk az also reszt
+	mov		eax, edx
+	xor		edx, edx
+	div		ebx					; elosztjuk a felso reszt 10-zel
+	xchg	[esp], eax			; hanyadost verembe tesszuk, a szam also reszet is elosztjuk 10-zel
+	div		ebx
+	xchg	[esp], edx			; a maradekot (kiirando szamjegy) verembe tesszuk, az eredeti szam felso reszet helyere rakjuk
+	jmp		.to_stack
+	
+.from_stack:
+	pop		eax
+	cmp		eax, -1
+	je		.stop
+	add		eax, '0'
+	call	mio_writechar
+	jmp		.from_stack
+	
+.stop:							; helyreallitja az eredeti ertekeket
+	pop		edx
+	pop		ecx
+	pop		ebx
+	pop		eax
+	ret
 	
 	
 	
 	
+ReadBin64:
+	push	ebx
+	push	ecx
+	push	esi
+	
+	xor		eax, eax			; itt epitjuk a szamot
+	xor		edx, edx
+	xor		ecx, ecx			; szamoljuk, hogy hany karakter volt eddig beolvasva
+	
+	push	ebp					; a veremben "lokalisan memoriat foglalunk"
+    mov		ebp, esp
+	sub		esp, 64				; max 64 karaktert (0/1) adhat meg a felhasznalo
+	
+.loop_read:
+	call	mio_readchar
+	cmp		al, 13				; ha enter
+	je		.end_read
+	call	mio_writechar
+	inc		ecx					; noveljuk a beolvasott karakterek szamat
+	
+	cmp		al, 0x08			; ha backspace
+	je		.backspace
+	
+	cmp		ecx, 64
+	jg		.loop_read			; ha mar tobb mint 32 karaktert olvastunk be, akkor azt nem taroljuk
+	
+	mov		BYTE [esp + ecx - 1], al
+	jmp		.loop_read
+	
+.backspace:
+	jecxz	.loop_read			; ha nincs karakter a kepernyon, akkor a backspace-nek nincs hatasa
+	
+	mov		al, 0x20			; space
+	call	mio_writechar
+	mov		al, 0x08			; backspace
+	call	mio_writechar
+	dec		ecx					; backspace miatt
+	dec		ecx					; kitorolt karakter miatt
+	jmp		.loop_read
+	
+	
+.end_read:
+	xor		ebx, ebx			; hogy kesobb osszeadasnal ne legyen szemet ertek benne
+	xor		edx, edx			; epitjuk a szamot
+	xor		eax, eax
+	xor		esi, esi			; szamoljuk a feldolgozott karaktereket
+	
+	cmp		ecx, 64
+	jg		.error				; ha tul hosszu a szam, akkor hiba
+	
+.loop_build:
+	cmp		esi, ecx
+	je		.end
+	
+	mov		BYTE bl, [esp + esi]; betoltjuk az elso karaktert
+	cmp		bl, '0'
+	jb		.error
+	cmp		bl, '1'
+	ja		.error
+	sub		bl, '0'
+	shl		edx, 1
+	shl		eax, 1				; balra toljuk egy bittel
+	adc		edx, 0				; az EAX balra tolasabol tulcsordulo biteket EDX-be rajkuk
+	or		eax, ebx			; hozzaadjuk EAX-hez a bitet
+	
+	inc		esi
+	jmp		.loop_build
+	
+.error:
+	stc
+	jmp		.pop_return
+	
+.end:
+	clc
+	
+.pop_return:
+	mov		esp, ebp
+    pop		ebp
+	
+	pop		esi
+	pop		ecx
+	pop		ebx
+	
+	ret
 	
 	
 	
