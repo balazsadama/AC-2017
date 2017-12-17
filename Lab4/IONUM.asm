@@ -54,11 +54,13 @@ main:
 	; call	WriteBin
 	
 .repeat_ReadHex:
-	call	ReadHex
-	jc		.hiba_ReadHex
+	; call	ReadHex
+	; jc		.hiba_ReadHex
 	
-	call	mio_writeln
-	call	WriteHex
+	; call	mio_writeln
+	; call	WriteHex
+	
+	call	ReadInt64
 	
 	ret
 	
@@ -510,6 +512,147 @@ WriteHex:
 	pop		ebx
 	pop		eax
 	ret
+	
+	
+	
+	
+	
+ReadInt64:
+	push	ebx
+	push	ecx
+	push	edi
+	push	esi
+	
+	xor		ecx, ecx			; szamoljuk, hogy hany karakter volt eddig beolvasva
+	
+	push	ebp					; a veremben "lokalisan memoriat foglalunk"
+    mov		ebp, esp
+	sub		esp, 20				; max 19 szamjegyes lehet + elojel = 20 karakter = 20 byte
+	
+.loop_read:
+	call	mio_readchar
+	cmp		al, 13				; ha enter
+	je		.end_read
+	call	mio_writechar
+	inc		ecx					; noveljuk a beolvasott karakterek szamat
+	
+	cmp		al, 0x08			; ha backspace
+	je		.backspace
+	
+	cmp		ecx, 20
+	jg		.loop_read			; ha mar tobb mint 20 karaktert olvastunk be, akkor azt nem taroljuk
+	
+	mov		BYTE [esp + ecx - 1], al
+	jmp		.loop_read
+	
+.backspace:
+	jecxz	.loop_read			; ha nincs karakter a kepernyon, akkor a backspace-nek nincs hatasa
+	
+	mov		al, 0x20			; space
+	call	mio_writechar
+	mov		al, 0x08			; backspace
+	call	mio_writechar
+	dec		ecx					; backspace miatt
+	dec		ecx					; kitorolt karakter miatt
+	jmp		.loop_read
+	
+.end_read:
+	cmp		ecx, 20
+	jg		.error				; ha tul hosszu a szam, akkor hiba
+	
+	xor		ebx, ebx			; hogy kesobb osszeadasnal ne legyen szemet ertek benne
+	xor		edx, edx			; epitjuk a szamot
+	xor		eax, eax			; epitjuk a szamot
+	xor		esi, esi			; szamoljuk a feldolgozott karaktereket
+	
+	
+.loop_build:
+	cmp		esi, ecx
+	je		.end
+	
+	mov		BYTE bl, [esp + esi]; betoltjuk az elso karaktert
+	
+	cmp		bl, '-'
+	jne		.skipNegative
+	mov		BYTE [esp], bl		; hogy a vegen tudjuk, hogy kell-e negalni a szamot
+	inc		esi
+	jmp		.loop_build
+	
+.skipNegative:
+	cmp		bl, '0'
+	jb		.error
+	cmp		bl, '9'
+	ja		.error
+	sub		bl, '0'
+	
+	mul	edx, 10				; a szam felso reszet megszorozzuk 10-el
+	jo		.error
+	
+	mov		edi, edx			; elmentjuk a szam felso reszet
+	xor		edx, edx
+	push	ecx
+	mov		ecx, 10
+	mul		ecx					; EDX:EAX = EAX * 10
+	pop		ecx
+	; jo		.error				; ha tulcsordulas tortent, akkor hiba
+	add		eax, ebx			; hozzaadjuk az uj szamjegyet
+	jo		.error
+	add		edx, edi
+	jo		.error
+	
+	inc		esi
+	jmp		.loop_build
+	
+.error:
+	stc
+	jmp		.pop_return
+	
+.end:
+	mov		BYTE bl, [esp]
+	cmp		bl, '-'
+	jne		.positive			; ha nem volt minusz jel megadva a szam elejen, akkor pozitivkent kezeljuk
+	
+	;cmp		eax, 0x80000000
+	;ja		.error				; ha negativ iranyban tulcsordult, akkor hiba
+	
+	neg		eax
+	clc
+	jmp		.pop_return
+	
+.positive:
+	clc
+	
+	;cmp		eax, 0x80000000		; ha pozitiv iranyban tulcsordult, akkor hiba
+	;jae		.error
+	clc
+	
+.pop_return:
+	mov		esp, ebp
+    pop		ebp
+	
+	pop		esi
+	pop		edi
+	pop		ecx
+	pop		ebx
+	
+	ret
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	
 	
 	
