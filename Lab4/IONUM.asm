@@ -65,6 +65,8 @@ main:
 	; call	WriteInt64
 	
 	call	ReadBin64
+	call	mio_writeln
+	call	WriteBin64
 	
 	ret
 	
@@ -799,11 +801,126 @@ ReadBin64:
 	ret
 	
 	
+WriteBin64:
+	push	eax
+	mov		eax, edx
+	call	WriteBin
+	mov		al, ' '
+	call	mio_writechar
+	pop		eax
+	call	WriteBin
+	ret
 	
 	
 	
+ReadHex64:
+	push	ebx
+	push	ecx
+	push	esi
+	
+	xor		ecx, ecx			; szamoljuk, hogy hany karakter volt eddig beolvasva
+	
+	push	ebp					; a veremben "lokalisan memoriat foglalunk"
+    mov		ebp, esp
+	sub		esp, 16				; max 16 karaktert adhat meg a felhasznalo
+	
+.loop_read:
+	call	mio_readchar
+	cmp		al, 13				; ha enter
+	je		.end_read
+	call	mio_writechar
+	inc		ecx					; noveljuk a beolvasott karakterek szamat
+	
+	cmp		al, 0x08			; ha backspace
+	je		.backspace
+	
+	cmp		ecx, 16
+	jg		.loop_read			; ha mar tobb mint 8 karaktert olvastunk be, akkor azt nem taroljuk
+	
+	mov		BYTE [esp + ecx - 1], al
+	jmp		.loop_read
+	
+.backspace:
+	jecxz	.loop_read			; ha nincs karakter a kepernyon, akkor a backspace-nek nincs hatasa
+	
+	mov		al, 0x20			; space
+	call	mio_writechar
+	mov		al, 0x08			; backspace
+	call	mio_writechar
+	dec		ecx					; backspace miatt
+	dec		ecx					; kitorolt karakter miatt
+	jmp		.loop_read
 	
 	
+.end_read:
+	cmp		ecx, 16
+	jg		.error				; ha tul hosszu a szam, akkor hiba
+	
+	xor		ebx, ebx			; hogy kesobb osszeadasnal ne legyen szemet ertek benne
+	xor		edx, edx			; epitjuk a szamot
+	xor		eax, eax			; epitjuk a szamot
+	xor		esi, esi			; szamoljuk a feldolgozott karaktereket
+	
+.loop_build:
+
+	cmp		esi, ecx
+	je		.end
+	
+	mov		BYTE bl, [esp + esi]; betoltjuk az elso karaktert
+	cmp		bl, '0'
+	jb		.error
+	
+	cmp		bl, '9'
+	ja		.check_uppercase
+	
+	sub		bl, '0'				; ha 0-9 kozti karakter
+	jmp		.good_value
+	
+.check_uppercase:
+	cmp		bl, 'A'
+	jl		.error
+	cmp		bl, 'F'
+	jg		.check_lowercase
+	
+	sub		bl, 'A'
+	add		bl, 10
+	jmp		.good_value
+	
+.check_lowercase:
+	cmp		bl, 'a'
+	jl		.error
+	cmp		bl, 'f'
+	jg		.error
+	
+	sub		bl, 'a'
+	add		bl, 10
+	jmp		.good_value
+	
+	
+.good_value:
+	shl		eax, 4				; balra tolunk, hogy az uj szamjegyet hozzaragasszuk
+	add		eax, ebx
+
+	inc		esi
+	jmp		.loop_build
+	
+	
+.error:
+	stc
+	jmp		.pop_return
+	
+.end:
+	clc
+	
+.pop_return:
+	mov		esp, ebp
+    pop		ebp
+	
+	pop		esi
+	pop		ecx
+	pop		ebx
+	
+	ret	
 	
 	
 	
