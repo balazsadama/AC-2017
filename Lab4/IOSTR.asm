@@ -22,8 +22,6 @@ global NewLine
 
 section .text
 	
-	
-	
 ReadStr:
 	pushad					; elmentjuk az eredeti ertekeket
 	mov		edx, ecx

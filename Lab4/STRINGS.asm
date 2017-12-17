@@ -11,7 +11,6 @@
 
 %include 'mio.inc'
 
-global main
 
 global StrLen
 global StrCat
@@ -20,7 +19,7 @@ global StrLower
 global StrCompact
 
 	
-	
+section .text
 	
 StrLen:
 	push	ebx

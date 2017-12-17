@@ -23,15 +23,18 @@
 global main
 
 section .text
+
+main:
 	mov		esi, beker
 	call	WriteStr
 	mov		edi, str1
 	mov		ecx, 255
 	call	ReadStr
 	mov		esi, str1
+	call	NewLine
 	call	StrLen
 	call	WriteInt
-	call	WriteLn
+	call	NewLine
 	mov		edi, str1c
 	call	StrCompact
 	mov		esi, str1c
@@ -44,12 +47,13 @@ section .text
 	mov		edi, str2
 	call	ReadStr
 	mov		esi, str2
+	call	NewLine
 	call	StrLen
 	call	WriteInt
-	call	WriteLn
+	call	NewLine
 	mov		edi, str2c
 	call	StrCompact
-	mov		esi, str1c
+	mov		esi, str2c
 	call	WriteLnStr
 	call	StrUpper
 	call	WriteLnStr
@@ -68,6 +72,8 @@ section .text
 	call	StrCat
 	mov		esi, str3
 	call	WriteLnStr
+	call	StrLen
+	call	WriteInt
 	
 	ret
 	
