@@ -585,10 +585,14 @@ ReadInt64:
 	ja		.error
 	sub		bl, '0'
 	
-	mul	edx, 10				; a szam felso reszet megszorozzuk 10-el
+	push	eax
+	mov		eax, edx
+	mov		edx, 10
+	mul		edx					; a szam felso reszet megszorozzuk 10-el
+	mov		edi, eax			; elmentjuk a szam felso reszet
+	pop		eax
 	jo		.error
 	
-	mov		edi, edx			; elmentjuk a szam felso reszet
 	xor		edx, edx
 	push	ecx
 	mov		ecx, 10
@@ -596,9 +600,11 @@ ReadInt64:
 	pop		ecx
 	; jo		.error				; ha tulcsordulas tortent, akkor hiba
 	add		eax, ebx			; hozzaadjuk az uj szamjegyet
-	jo		.error
+	jnc		.dont_add
+	add		edx, 1
+.dont_add:
 	add		edx, edi
-	jo		.error
+	jc		.error
 	
 	inc		esi
 	jmp		.loop_build
@@ -612,18 +618,28 @@ ReadInt64:
 	cmp		bl, '-'
 	jne		.positive			; ha nem volt minusz jel megadva a szam elejen, akkor pozitivkent kezeljuk
 	
-	;cmp		eax, 0x80000000
-	;ja		.error				; ha negativ iranyban tulcsordult, akkor hiba
 	
-	neg		eax
+	; cmp		edx, 0x7fffffff
+	; ja		.error				; ha negativ iranyban tulcsordult, akkor hiba
+	cmp		edx, 0x80000000
+	ja		.error
+	
+	not		eax
+	add		eax, 1
+	not		edx
+	jnc		.skip_add
+	add		edx, 1
+.skip_add:
 	clc
 	jmp		.pop_return
 	
 .positive:
 	clc
 	
-	;cmp		eax, 0x80000000		; ha pozitiv iranyban tulcsordult, akkor hiba
-	;jae		.error
+	; cmp		edx, 0x7fffffff		; ha pozitiv iranyban tulcsordult, akkor hiba
+	; ja		.error
+	cmp		edx, 0x80000000		; ha pozitiv iranyban tulcsordult, akkor hiba
+	jae		.error
 	clc
 	
 .pop_return:
