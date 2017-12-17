@@ -64,9 +64,13 @@ main:
 	; call	mio_writeln
 	; call	WriteInt64
 	
-	call	ReadBin64
+	; call	ReadBin64
+	; call	mio_writeln
+	; call	WriteBin64
+	
+	call	ReadHex64
 	call	mio_writeln
-	call	WriteBin64
+	call	WriteHex64
 	
 	ret
 	
@@ -511,8 +515,6 @@ WriteHex:
 .write_hex_iterate:
 	loop	.loop_write
 
-	mov		eax, 10
-	call	mio_writechar
 	pop		edx
 	pop		ecx
 	pop		ebx
@@ -862,7 +864,6 @@ ReadHex64:
 	xor		esi, esi			; szamoljuk a feldolgozott karaktereket
 	
 .loop_build:
-
 	cmp		esi, ecx
 	je		.end
 	
@@ -898,12 +899,19 @@ ReadHex64:
 	
 	
 .good_value:
-	shl		eax, 4				; balra tolunk, hogy az uj szamjegyet hozzaragasszuk
+	push	ecx
+	mov		ecx, 4
+.push_left:						; balra tolunk, hogy az uj szamjegyet hozzaragasszuk
+	shl		edx, 1
+	shl		eax, 1
+	adc		edx, 0
+	loop	.push_left
+	
+	pop		ecx
 	add		eax, ebx
-
+	
 	inc		esi
 	jmp		.loop_build
-	
 	
 .error:
 	stc
@@ -922,7 +930,13 @@ ReadHex64:
 	
 	ret	
 	
-	
+WriteHex64:
+	push	eax
+	mov		eax, edx
+	call	WriteHex
+	pop		eax
+	call	WriteHex
+	ret
 	
 	
 	
