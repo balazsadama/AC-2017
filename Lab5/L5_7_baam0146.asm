@@ -148,6 +148,10 @@ ReadFloat:
 	
 	cmp		bl, '.'
 	je		.point
+	cmp		bl, 'e'
+	je		.exponential_no_point
+	cmp		bl, 'E'
+	je		.exponential_no_point
 	
 	cmp		bl, '-'
 	jne		.skipNegative
@@ -158,10 +162,8 @@ ReadFloat:
 .skipNegative:
 	cmp		bl, '0'
 	jb		.error
-	
 	cmp		bl, '9'
 	ja		.error
-	
 	sub		bl, '0'
 	imul	eax, 10
 	jo		.error				; ha tulcsordulas tortent, akkor hiba
@@ -178,22 +180,60 @@ ReadFloat:
 	
 	
 	
+.exponential_no_point:			; fel kell dolgoznunk az 'e' utani karaktereket
+	inc		edx
+	cvtsi2ss xmm0, eax			; xmm0-ba rakjuk eax tartalmat float-kent
+	xor		eax, eax			; itt epitjuk az 'e' utani szamot
+
+.loop_after_e:
+	cmp		edx, ecx
+	je		.end_exp
+	
+	mov		BYTE bl, [esp + edx]; betoltjuk akaraktert
+	cmp		bl, '0'
+	jb		.error
+	cmp		bl, '9'
+	ja		.error
+	sub		bl, '0'
+	imul	eax, 10
+	jo		.error
+	add		eax, ebx
+	inc		edx
+	jmp		.loop_after_e
+	
+	
+.end_exp:						; eax-ben van az 'e' utani szam
+	comiss	xmm0, [ten]
+	jng		.skip_reduction		; ha az 'e' betu elott a szam nagyobb (moduluszban), mint 10, akkor osztanunk kell, mig csak egy szamjegy marad egeszkent
+	
+.loop_div:
+	divss	xmm0, [ten]
+	inc		eax					; eax-ben van a hatvany, ezt noveljuk ha osztunk 10-zel
+	comiss	xmm0, [ten]
+	jge		.loop_div			; addig osztunk, mig csak egy szamjegy marad egeszkent
+	
+	
+	
+	
+	
+
 .point:
 	xorps	xmm0, xmm0			; itt taroljuk a szam egesz reszet
 	xorps	xmm1, xmm1			; itt epitjuk a szam valos reszet
 	cvtsi2ss xmm0, eax			; a szam egesz reszet konvertaljuk float-ba az xmm2 regiszterbe
 	inc		edx
 	
-	
 .loop_point:
 	cmp		edx, ecx
 	je		.end_point
 	
 	mov		BYTE bl, [esp + ecx - 1]; betoltjuk akaraktert
-	
+	cmp		bl, 'e'
+	je		.exponential_point
+	cmp		bl, 'E'
+	je		.exponential_point
 	cmp		bl, '0'
 	jb		.error
-	
 	cmp		bl, '9'
 	ja		.error
 	
@@ -205,15 +245,10 @@ ReadFloat:
 	
 	dec		ecx
 	jmp		.loop_point
-	
-	
-	
-	
-	
+
 .end_no_point:
 	cvtsi2ss xmm0, eax			; ha nem volt pont beolvasva, akkor itt tortenik a konverzio
 	jmp		.sign
-	
 	
 .end_point:
 	addss	xmm0, xmm1			; hozzaadjuk a valos reszt az egesz reszhez
@@ -238,7 +273,6 @@ ReadFloat:
 	pop		ecx
 	pop		ebx
 	
-	call	mio_writeln
 	ret
 
 
@@ -246,6 +280,7 @@ section .data
 	konst		dd		2.7
 	point_one	dd		0.1
 	minus_one	dd		-1.0
+	ten			dd		10.0
 
 section .bss
 	num_a	resd	1
