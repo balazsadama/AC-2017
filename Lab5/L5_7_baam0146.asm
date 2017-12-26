@@ -20,9 +20,11 @@ main:
 	; call	io_writeflt
 	; call	mio_writeln
 	
-	; call	ReadFloat
-	; call	io_writeflt
-	; call	mio_writeln
+	call	ReadFloat
+	call	mio_writeln
+	call	io_writeflt
+	call	mio_writeln
+	call	WriteFloat
 
 	; call	io_readflt
 	; movss	[num_a], xmm0
@@ -42,21 +44,21 @@ main:
 	
 	
 	
-	call	ReadFloat
-	movss	[num_a], xmm0
+	; call	ReadFloat
+	; movss	[num_a], xmm0
 	
-	call	ReadFloat
-	movss	[num_b], xmm0
+	; call	ReadFloat
+	; movss	[num_b], xmm0
 	
-	call	ReadFloat
-	movss	[num_c], xmm0
+	; call	ReadFloat
+	; movss	[num_c], xmm0
 	
-	call	ReadFloat
-	movss	[num_d], xmm0
+	; call	ReadFloat
+	; movss	[num_d], xmm0
 	
-	call	Calculate
-	movss	xmm0, [res]
-	call	io_writeflt
+	; call	Calculate
+	; movss	xmm0, [res]
+	; call	io_writeflt
 	
 	
 	
@@ -190,6 +192,8 @@ ReadFloat:
 	je		.end_exp
 	
 	mov		BYTE bl, [esp + edx]; betoltjuk akaraktert
+	cmp		bl, '-'
+	je		.neg_after_e
 	cmp		bl, '0'
 	jb		.error
 	cmp		bl, '9'
@@ -201,18 +205,41 @@ ReadFloat:
 	inc		edx
 	jmp		.loop_after_e
 	
+.neg_after_e:
+	inc		edx
+	cmp		edx, ecx
+	je		.end_exp
 	
-.end_exp:						; eax-ben van az 'e' utani szam
-	comiss	xmm0, [ten]
-	jng		.skip_reduction		; ha az 'e' betu elott a szam nagyobb (moduluszban), mint 10, akkor osztanunk kell, mig csak egy szamjegy marad egeszkent
+	mov		BYTE bl, [esp + edx]; betoltjuk akaraktert
+	cmp		bl, '0'
+	jb		.error
+	cmp		bl, '9'
+	ja		.error
+	sub		bl, '0'
+	imul	eax, 10
+	jo		.error
+	sub		eax, ebx
+	jmp		.neg_after_e
+
+.end_exp:
+	cmp		eax, 0
+	jl		.loop_div
+	
+.loop_mul:
+	cmp		eax, 0
+	je		.sign
+	mulss	xmm0, [ten]
+	jo		.error
+	dec		eax
+	jmp		.loop_mul
 	
 .loop_div:
+	cmp		eax, 0
+	je		.sign
 	divss	xmm0, [ten]
-	inc		eax					; eax-ben van a hatvany, ezt noveljuk ha osztunk 10-zel
-	comiss	xmm0, [ten]
-	jge		.loop_div			; addig osztunk, mig csak egy szamjegy marad egeszkent
-	
-	
+	jo		.error
+	add		eax, 1
+	jmp		.loop_div
 	
 	
 	
@@ -229,9 +256,9 @@ ReadFloat:
 	
 	mov		BYTE bl, [esp + ecx - 1]; betoltjuk akaraktert
 	cmp		bl, 'e'
-	je		.exponential_point
+	je		.exponential_no_point
 	cmp		bl, 'E'
-	je		.exponential_point
+	je		.exponential_no_point
 	cmp		bl, '0'
 	jb		.error
 	cmp		bl, '9'
@@ -274,6 +301,108 @@ ReadFloat:
 	pop		ebx
 	
 	ret
+	
+	
+WriteFloat:
+	pushad
+	push	ebp					; a veremben "lokalisan memoriat foglalunk"
+    mov		ebp, esp
+	sub		esp, 32				; 2*16 byte ket xmm_ regiszternek
+	
+	movdqu	[esp], xmm0
+	movdqu	[esp + 16], xmm1
+	
+	comiss	xmm0, [zero]
+	jge		.positive
+	mov		eax, '-'
+	call	mio_writechar
+	mulss	xmm0, [minus_one]
+	
+.positive:
+	cvttss2si eax, xmm0
+	call	WriteInt			; kiirjuk az egesz reszet
+	cvtsi2ss xmm1, eax
+	mov		eax, '.'
+	call	mio_writechar
+	subss	xmm0, xmm1			; megtartjuk a tortreszt
+	mulss	xmm0, [kk]			; 6 tizedes pontossaggal irjuk ki
+	cvttss2si eax, xmm0
+	call	WriteInt			; kiirjuk az egesz reszet
+	
+	
+	movdqu xmm1, [esp + 16]
+	movdqu xmm0, [esp]
+	
+	mov		esp, ebp
+    pop		ebp
+	popad
+	ret
+	
+WriteFloatExp:
+	pushad
+	push	ebp					; a veremben "lokalisan memoriat foglalunk"
+    mov		ebp, esp
+	sub		esp, 32				; 2*16 byte ket xmm_ regiszternek
+	
+	movdqu	[esp], xmm0
+	movdqu	[esp + 16], xmm1
+	
+	comiss	xmm0, [zero]
+	jge		.positive
+	mov		eax, '-'
+	call	mio_writechar
+	mulss	xmm0, [minus_one]
+	
+.positive:
+	comiss	xmm0, [ten]
+	jl
+	
+	
+	
+	
+	popad
+	ret
+	
+WriteInt:
+	push	eax				; elmentjuk az eredeti ertekeket
+	push	ebx
+	push	ecx
+	push	edx
+
+	push	-1				; megallasi feltetel
+	cmp		eax, 0
+	jge		.to_stack		; ha pozitiv, nem irjuk ki a '-' jelet
+	push	eax
+	mov		eax, '-'
+	call	mio_writechar
+	pop		eax
+	neg		eax
+	
+.to_stack:
+	xor		edx, edx			; EDX-et nullara allitjuk, hogy jol osszon
+	mov		ebx, 10				; tizzel osztunk, hogy az utolso szamjegyet kapjuk maradekkent
+	div		ebx	
+	add		edx, 48				; karakterre alakitjuk szamjegybol
+	push	edx
+	cmp		eax, 0
+	je		.from_stack
+	jmp		.to_stack
+	
+.from_stack:
+	pop		eax
+	cmp		eax, -1
+	je		.stop
+	call	mio_writechar
+	jmp		.from_stack
+	
+.stop:							; helyreallitja az eredeti ertekeket
+	pop		edx
+	pop		ecx
+	pop		ebx
+	pop		eax
+	ret
+	
+
 
 
 section .data
@@ -281,6 +410,8 @@ section .data
 	point_one	dd		0.1
 	minus_one	dd		-1.0
 	ten			dd		10.0
+	zero		dd		0.0
+	kk			dd		1000000.0
 
 section .bss
 	num_a	resd	1
