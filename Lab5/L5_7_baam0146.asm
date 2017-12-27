@@ -6,9 +6,6 @@
 
 %include 'mio.inc'
 
-;;;;;;;;;;;;;;;;;;;;!!!!!!!!!!!!!!!!!!!!!!!!
-%include 'io.inc'
-;;;;;;;;;;;;;;;;;;;;!!!!!!!!!!!!!!!!!!!!!!!!
 
 global main
 
@@ -16,51 +13,27 @@ section .text
 
 main:
 
-	; call	io_readflt
-	; call	io_writeflt
-	; call	mio_writeln
-	
+	mov		esi, str1
 	call	ReadFloat
-	call	mio_writeln
-	call	io_writeflt
-	call	mio_writeln
+	movss	[num_a], xmm0
+	
+	mov		esi, str2
+	call	ReadFloat
+	movss	[num_b], xmm0
+	
+	mov		esi, str1
+	call	ReadFloat
+	movss	[num_c], xmm0
+	
+	mov		esi, str2
+	call	ReadFloat
+	movss	[num_d], xmm0
+	
+	call	Calculate
+	movss	xmm0, [res]
 	call	WriteFloat
-
-	; call	io_readflt
-	; movss	[num_a], xmm0
-	
-	; call	io_readflt
-	; movss	[num_b], xmm0
-	
-	; call	io_readflt
-	; movss	[num_c], xmm0
-	
-	; call	io_readflt
-	; movss	[num_d], xmm0
-	
-	; call	Calculate
-	; movss	xmm0, [res]
-	; call	io_writeflt
-	
-	
-	
-	; call	ReadFloat
-	; movss	[num_a], xmm0
-	
-	; call	ReadFloat
-	; movss	[num_b], xmm0
-	
-	; call	ReadFloat
-	; movss	[num_c], xmm0
-	
-	; call	ReadFloat
-	; movss	[num_d], xmm0
-	
-	; call	Calculate
-	; movss	xmm0, [res]
-	; call	io_writeflt
-	
-	
+	call	mio_writeln
+	call	WriteFloatExp
 	
 	
 	ret
@@ -118,13 +91,13 @@ ReadFloat:
 	je		.backspace
 	
 	cmp		ecx, 50
-	jg		.loop_read			; ha mar tobb mint 11 karaktert olvastunk be, akkor azt nem taroljuk
+	jg		.loop_read			; ha mar tobb mint 11 karaktert olvastunk be, amilor azt nem taroljuk
 	
 	mov		BYTE [esp + ecx - 1], al
 	jmp		.loop_read
 	
 .backspace:
-	jecxz	.loop_read			; ha nincs karakter a kepernyon, akkor a backspace-nek nincs hatasa
+	jecxz	.loop_read			; ha nincs karakter a kepernyon, amilor a backspace-nek nincs hatasa
 	
 	mov		al, 0x20			; space
 	call	mio_writechar
@@ -140,7 +113,7 @@ ReadFloat:
 	xor		eax, eax			; epitjuk a szamot
 	
 	cmp		ecx, 50
-	jg		.error				; ha tul hosszu a szam, akkor hiba
+	jg		.error				; ha tul hosszu a szam, amilor hiba
 	
 .loop_build:
 	cmp		edx, ecx
@@ -168,7 +141,7 @@ ReadFloat:
 	ja		.error
 	sub		bl, '0'
 	imul	eax, 10
-	jo		.error				; ha tulcsordulas tortent, akkor hiba
+	jo		.error				; ha tulcsordulas tortent, amilor hiba
 	add		eax, ebx
 	
 	inc		edx
@@ -274,7 +247,7 @@ ReadFloat:
 	jmp		.loop_point
 
 .end_no_point:
-	cvtsi2ss xmm0, eax			; ha nem volt pont beolvasva, akkor itt tortenik a konverzio
+	cvtsi2ss xmm0, eax			; ha nem volt pont beolvasva, amilor itt tortenik a konverzio
 	jmp		.sign
 	
 .end_point:
@@ -283,7 +256,7 @@ ReadFloat:
 .sign:
 	mov		BYTE bl, [esp]
 	cmp		bl, '-'
-	jne		.positive			; ha nem volt minusz jel megadva a szam elejen, akkor pozitivkent kezeljuk
+	jne		.positive			; ha nem volt minusz jel megadva a szam elejen, amilor pozitivkent kezeljuk
 	
 	mulss	xmm0, [minus_one]	; megszorozzuk (-1)-gyel
 	clc
@@ -313,7 +286,7 @@ WriteFloat:
 	movdqu	[esp + 16], xmm1
 	
 	comiss	xmm0, [zero]
-	jge		.positive
+	jae		.positive
 	mov		eax, '-'
 	call	mio_writechar
 	mulss	xmm0, [minus_one]
@@ -325,7 +298,7 @@ WriteFloat:
 	mov		eax, '.'
 	call	mio_writechar
 	subss	xmm0, xmm1			; megtartjuk a tortreszt
-	mulss	xmm0, [kk]			; 6 tizedes pontossaggal irjuk ki
+	mulss	xmm0, [mil]			; 6 tizedes pontossaggal irjuk ki
 	cvttss2si eax, xmm0
 	call	WriteInt			; kiirjuk az egesz reszet
 	
@@ -343,23 +316,51 @@ WriteFloatExp:
 	push	ebp					; a veremben "lokalisan memoriat foglalunk"
     mov		ebp, esp
 	sub		esp, 32				; 2*16 byte ket xmm_ regiszternek
+	xor		ebx, ebx			; szamoljuk az exponenset
 	
 	movdqu	[esp], xmm0
 	movdqu	[esp + 16], xmm1
 	
 	comiss	xmm0, [zero]
-	jge		.positive
+	jae		.loop_div
 	mov		eax, '-'
 	call	mio_writechar
 	mulss	xmm0, [minus_one]
 	
-.positive:
-	comiss	xmm0, [ten]
-	jl
+.loop_div:
+	comiss	xmm0, [ten]			; ha nagyobb, mint 10, amilor addig osztunk, amig csak egy szamjegy marad egesz resznek
+	jb		.loop_mul
+	divss	xmm0, [ten]
+	inc		ebx
+	jmp		.loop_div
 	
+.loop_mul:
+	comiss	xmm0, [one]			; ha kisebb, mint 1, amilor addig szorzunk, amig csak egy szamjegy marad egesz resznek
+	jae		.stop_mul
+	mulss	xmm0, [ten]
+	dec		ebx
+	jmp		.loop_mul
 	
+.stop_mul:
+	cvttss2si eax, xmm0
+	cvtsi2ss xmm1, eax
+	add		eax, '0'
+	call	mio_writechar
+	mov		eax, '.'
+	call	mio_writechar
+	subss	xmm0, xmm1
+	mulss	xmm0, [mil]
+	cvttss2si eax, xmm0
+	call	WriteInt
+	mov		eax, 'e'
+	call	mio_writechar
+	mov		eax, ebx
+	call	WriteInt
 	
-	
+	movdqu xmm1, [esp + 16]
+	movdqu xmm0, [esp]
+	mov		esp, ebp
+    pop		ebp
 	popad
 	ret
 	
@@ -380,7 +381,7 @@ WriteInt:
 	
 .to_stack:
 	xor		edx, edx			; EDX-et nullara allitjuk, hogy jol osszon
-	mov		ebx, 10				; tizzel osztunk, hogy az utolso szamjegyet kapjuk maradekkent
+	mov		ebx, 10				; tizzel osztunk, hogy az utolso szamjegyet kapjuk marademilent
 	div		ebx	
 	add		edx, 48				; karakterre alakitjuk szamjegybol
 	push	edx
@@ -402,16 +403,31 @@ WriteInt:
 	pop		eax
 	ret
 	
-
+WriteStr:
+	pushad						; elmentjuk az eredeti ertekeket
+	
+.loop_write:
+	lodsb
+	cmp		al, 0
+	je		.end
+	call	mio_writechar
+	jmp		.loop_write
+	
+.end:
+	popad
+	ret
 
 
 section .data
+	str1		db		'Adjon meg egy egyszeres pontossagu lebegopontos erteket hagyomanyos formaban: ', 0
+	str2		db		'Adjon meg egy egyszeres pontossagu lebegopontos erteket exponencialis formaban: ', 0
 	konst		dd		2.7
 	point_one	dd		0.1
+	one			dd		1.0
 	minus_one	dd		-1.0
 	ten			dd		10.0
 	zero		dd		0.0
-	kk			dd		1000000.0
+	mil			dd		1000000.0
 
 section .bss
 	num_a	resd	1
