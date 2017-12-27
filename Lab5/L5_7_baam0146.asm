@@ -13,7 +13,7 @@ section .text
 
 main:
 
-	call	ReadFloat2
+	call	ReadFloat
 	call	mio_writeln
 	call	WriteFloat
 	call	mio_writeln
@@ -98,7 +98,8 @@ Calculate:
 	
 	popad
 	ret
-
+	
+	
 ReadFloat:
 	push	ebx
 	push	ecx
@@ -183,211 +184,6 @@ ReadFloat:
 	
 .exponential:					; fel kell dolgoznunk az 'e' utani karaktereket
 	inc		edx
-	cvtsi2ss xmm0, eax			; xmm0-ba rakjuk eax tartalmat float-kent
-	xor		eax, eax			; itt epitjuk az 'e' utani szamot
-
-.loop_after_e:
-	cmp		edx, ecx
-	je		.end_exp
-	
-	mov		BYTE bl, [esp + edx]; betoltjuk akaraktert
-	cmp		bl, '-'
-	je		.neg_after_e
-	cmp		bl, '0'
-	jb		.error
-	cmp		bl, '9'
-	ja		.error
-	sub		bl, '0'
-	imul	eax, 10
-	jo		.error
-	add		eax, ebx
-	inc		edx
-	jmp		.loop_after_e
-	
-.neg_after_e:
-	inc		edx
-	cmp		edx, ecx
-	je		.end_exp
-	
-	mov		BYTE bl, [esp + edx]; betoltjuk akaraktert
-	cmp		bl, '0'
-	jb		.error
-	cmp		bl, '9'
-	ja		.error
-	sub		bl, '0'
-	imul	eax, 10
-	jo		.error
-	sub		eax, ebx
-	jmp		.neg_after_e
-
-.end_exp:
-	cmp		eax, 0
-	jl		.loop_div
-	
-.loop_mul:
-	cmp		eax, 0
-	je		.sign
-	mulss	xmm0, [ten]
-	jo		.error
-	dec		eax
-	jmp		.loop_mul
-	
-.loop_div:
-	cmp		eax, 0
-	je		.sign
-	divss	xmm0, [ten]
-	jo		.error
-	add		eax, 1
-	jmp		.loop_div
-	
-	
-	
-
-.point:
-	xorps	xmm0, xmm0			; itt taroljuk a szam egesz reszet
-	xorps	xmm1, xmm1			; itt epitjuk a szam valos reszet
-	cvtsi2ss xmm0, eax			; a szam egesz reszet konvertaljuk float-ba az xmm2 regiszterbe
-	inc		edx
-	
-.loop_point:
-	cmp		edx, ecx
-	je		.end_point
-	
-	mov		BYTE bl, [esp + ecx - 1]; betoltjuk akaraktert
-	cmp		bl, 'e'
-	je		.exponential
-	cmp		bl, 'E'
-	je		.exponential
-	cmp		bl, '0'
-	jb		.error
-	cmp		bl, '9'
-	ja		.error
-	
-	sub		bl, '0'
-	cvtsi2ss xmm2, ebx			; xmm2-be tesszuk az uj szamjegyet float-kent
-	mulss	xmm1, [point_one]	; a szam eddigi valos reszet megszorozzuk 0.1-gyel
-	mulss	xmm2, [point_one]	; az uj szamjegyet megszorozzuk 0.1-gyel
-	addss	xmm1, xmm2			; hozzaadjuk az uj szamjegyet
-	
-	dec		ecx
-	jmp		.loop_point
-
-.end_no_point:
-	cvtsi2ss xmm0, eax			; ha nem volt pont beolvasva, amikor itt tortenik a konverzio
-	jmp		.sign
-	
-.end_point:
-	addss	xmm0, xmm1			; hozzaadjuk a valos reszt az egesz reszhez
-	
-.sign:
-	mov		BYTE bl, [esp]
-	cmp		bl, '-'
-	jne		.positive			; ha nem volt minusz jel megadva a szam elejen, amilor pozitivkent kezeljuk
-	
-	mulss	xmm0, [minus_one]	; megszorozzuk (-1)-gyel
-	clc
-	jmp		.pop_return
-	
-.positive:
-	clc
-	
-.pop_return:
-	mov		esp, ebp
-    pop		ebp
-	
-	pop		edx
-	pop		ecx
-	pop		ebx
-	
-	ret
-	
-	
-ReadFloat2:
-	push	ebx
-	push	ecx
-	push	edx
-	
-	xor		ecx, ecx			; szamoljuk, hogy hany karakter volt eddig beolvasva
-	
-	push	ebp					; a veremben "lokalisan memoriat foglalunk"
-    mov		ebp, esp
-	sub		esp, 50				; 50 karakternek hagyunk helyet
-	
-.loop_read:
-	call	mio_readchar
-	cmp		al, 13				; ha enter
-	je		.end_read
-	call	mio_writechar
-	inc		ecx					; noveljuk a beolvasott karakterek szamat
-	
-	cmp		al, 0x08			; ha backspace
-	je		.backspace
-	
-	cmp		ecx, 50
-	jg		.loop_read			; ha mar tobb mint 11 karaktert olvastunk be, amilor azt nem taroljuk
-	
-	mov		BYTE [esp + ecx - 1], al
-	jmp		.loop_read
-	
-.backspace:
-	jecxz	.loop_read			; ha nincs karakter a kepernyon, amilor a backspace-nek nincs hatasa
-	
-	mov		al, 0x20			; space
-	call	mio_writechar
-	mov		al, 0x08			; backspace
-	call	mio_writechar
-	dec		ecx					; backspace miatt
-	dec		ecx					; kitorolt karakter miatt
-	jmp		.loop_read
-	
-.end_read:
-	xor		ebx, ebx			; hogy kesobb osszeadasnal ne legyen szemet ertek benne
-	xor		edx, edx			; szamoljuk a feldolgozott karaktereket
-	xor		eax, eax			; epitjuk a szamot
-	
-	cmp		ecx, 50
-	jg		.error				; ha tul hosszu a szam, amilor hiba
-	
-.loop_build:
-	cmp		edx, ecx
-	je		.end_no_point
-	
-	mov		BYTE bl, [esp + edx]; betoltjuk akaraktert
-	
-	cmp		bl, '.'
-	je		.point
-	cmp		bl, 'e'
-	je		.exponential
-	cmp		bl, 'E'
-	je		.exponential
-	
-	cmp		bl, '-'
-	jne		.skipNegative
-	mov		BYTE [esp], bl		; hogy a vegen tudjuk, hogy kell-e negalni a szamot
-	inc		edx
-	jmp		.loop_build
-	
-.skipNegative:
-	cmp		bl, '0'
-	jb		.error
-	cmp		bl, '9'
-	ja		.error
-	sub		bl, '0'
-	imul	eax, 10
-	jo		.error				; ha tulcsordulas tortent, amilor hiba
-	add		eax, ebx
-	
-	inc		edx
-	jmp		.loop_build
-	
-.error:
-	stc
-	jmp		.pop_return
-	
-.exponential:					; fel kell dolgoznunk az 'e' utani karaktereket
-	inc		edx
-	;addss	xmm1, xmm0
-	;cvtsi2ss xmm0, eax			; xmm0-ba rakjuk eax tartalmat float-kent
 	xor		eax, eax			; itt epitjuk az 'e' utani szamot
 
 .loop_after_e:
@@ -453,7 +249,7 @@ ReadFloat2:
 	cvtsi2ss xmm0, eax			; a szam egesz reszet konvertaljuk float-ba az xmm2 regiszterbe
 	inc		edx
 	
-	movss	xmm3, [point_one]	; szorozni eloszor 0.1-gyel, utana 0.01, 0.001 stb
+	movss	xmm2, [point_one]	; szorozni eloszor 0.1-gyel, utana 0.01, 0.001 stb
 	
 .loop_point:
 	cmp		edx, ecx
@@ -470,11 +266,11 @@ ReadFloat2:
 	ja		.error
 	
 	sub		bl, '0'
-	cvtsi2ss xmm2, ebx			; xmm2-be tesszuk az uj szamjegyet float-kent
+	cvtsi2ss xmm1, ebx			; xmm2-be tesszuk az uj szamjegyet float-kent
 	;mulss	xmm1, [point_one]	; a szam eddigi valos reszet megszorozzuk 0.1-gyel
-	mulss	xmm2, xmm3	; az uj szamjegyet megszorozzuk 10 megfelelo hatvanyaval
-	mulss	xmm3, [point_one]
-	addss	xmm0, xmm2			; hozzaadjuk az uj szamjegyet
+	mulss	xmm1, xmm2	; az uj szamjegyet megszorozzuk 10 megfelelo hatvanyaval
+	mulss	xmm2, [point_one]
+	addss	xmm0, xmm1			; hozzaadjuk az uj szamjegyet
 	
 	;dec		ecx
 	inc		edx
