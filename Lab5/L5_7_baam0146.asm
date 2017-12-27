@@ -13,27 +13,57 @@ section .text
 
 main:
 
-	mov		esi, str1
 	call	ReadFloat
-	movss	[num_a], xmm0
-	
-	mov		esi, str2
-	call	ReadFloat
-	movss	[num_b], xmm0
-	
-	mov		esi, str1
-	call	ReadFloat
-	movss	[num_c], xmm0
-	
-	mov		esi, str2
-	call	ReadFloat
-	movss	[num_d], xmm0
-	
-	call	Calculate
-	movss	xmm0, [res]
+	call	mio_writeln
 	call	WriteFloat
 	call	mio_writeln
 	call	WriteFloatExp
+
+	; mov		esi, str1
+	; call	WriteStr
+	; call	ReadFloat
+	
+	; call	WriteFloat
+	; call	mio_writeln
+	
+	; call	mio_writeln
+	; movss	[num_a], xmm0
+	
+	; mov		esi, str2
+	; call	WriteStr
+	; call	ReadFloat
+	
+	; call	WriteFloat
+	; call	mio_writeln
+	
+	; call	mio_writeln
+	; movss	[num_b], xmm0
+	
+	; mov		esi, str1
+	; call	WriteStr
+	; call	ReadFloat
+	
+	; call	WriteFloat
+	; call	mio_writeln
+	
+	; call	mio_writeln
+	; movss	[num_c], xmm0
+	
+	; mov		esi, str2
+	; call	WriteStr
+	; call	ReadFloat
+	
+	; call	WriteFloat
+	; call	mio_writeln
+	
+	; call	mio_writeln
+	; movss	[num_d], xmm0
+	
+	; call	Calculate
+	; movss	xmm0, [res]
+	; call	WriteFloat
+	; call	mio_writeln
+	; call	WriteFloatExp
 	
 	
 	ret
@@ -124,9 +154,9 @@ ReadFloat:
 	cmp		bl, '.'
 	je		.point
 	cmp		bl, 'e'
-	je		.exponential_no_point
+	je		.exponential
 	cmp		bl, 'E'
-	je		.exponential_no_point
+	je		.exponential
 	
 	cmp		bl, '-'
 	jne		.skipNegative
@@ -151,11 +181,7 @@ ReadFloat:
 	stc
 	jmp		.pop_return
 	
-	
-	
-	
-	
-.exponential_no_point:			; fel kell dolgoznunk az 'e' utani karaktereket
+.exponential:					; fel kell dolgoznunk az 'e' utani karaktereket
 	inc		edx
 	cvtsi2ss xmm0, eax			; xmm0-ba rakjuk eax tartalmat float-kent
 	xor		eax, eax			; itt epitjuk az 'e' utani szamot
@@ -229,9 +255,9 @@ ReadFloat:
 	
 	mov		BYTE bl, [esp + ecx - 1]; betoltjuk akaraktert
 	cmp		bl, 'e'
-	je		.exponential_no_point
+	je		.exponential
 	cmp		bl, 'E'
-	je		.exponential_no_point
+	je		.exponential
 	cmp		bl, '0'
 	jb		.error
 	cmp		bl, '9'
@@ -247,7 +273,7 @@ ReadFloat:
 	jmp		.loop_point
 
 .end_no_point:
-	cvtsi2ss xmm0, eax			; ha nem volt pont beolvasva, amilor itt tortenik a konverzio
+	cvtsi2ss xmm0, eax			; ha nem volt pont beolvasva, amikor itt tortenik a konverzio
 	jmp		.sign
 	
 .end_point:
@@ -348,10 +374,22 @@ WriteFloatExp:
 	call	mio_writechar
 	mov		eax, '.'
 	call	mio_writechar
+	
+	mov		ecx, 6				; max 6 pontossaggal irjuk ki
+.while_not_zero:
+	jecxz	.stop
 	subss	xmm0, xmm1
-	mulss	xmm0, [mil]
+	comiss	xmm0, [zero]
+	je		.stop
+	mulss	xmm0, [ten]
 	cvttss2si eax, xmm0
-	call	WriteInt
+	cvtsi2ss xmm1, eax
+	add		eax, '0'
+	call	mio_writechar
+	dec		ecx
+	jmp		.while_not_zero
+	
+.stop:
 	mov		eax, 'e'
 	call	mio_writechar
 	mov		eax, ebx
@@ -414,6 +452,7 @@ WriteStr:
 	jmp		.loop_write
 	
 .end:
+	call	mio_writeln
 	popad
 	ret
 
@@ -428,6 +467,7 @@ section .data
 	ten			dd		10.0
 	zero		dd		0.0
 	mil			dd		1000000.0
+	var			dd		0.1
 
 section .bss
 	num_a	resd	1
