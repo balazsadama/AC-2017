@@ -4,11 +4,8 @@
 ; labor: L6
 ; Feladat: E(a,b) = (b^3 - a) / (a + b) - (a - b^2 + 1) / 4
 
-;%include 'mio.inc'
 
-;;;;;;;;;;;;;;;;;;;;!!!!!!!!!!!!!!!!!!!!!!!!
 %include 'io.inc'
-;;;;;;;;;;;;;;;;;;;;!!!!!!!!!!!!!!!!!!!!!!!!
 
 global main
 
@@ -16,9 +13,18 @@ global main
 section .text
 
 main:
+	mov		eax, feladat
+	call	io_writestr
+	call	io_writeln
 
 .loop_n:
+	mov		eax, strn
+	call	io_writestr
 	call	io_readint
+	cmp		eax, 4
+	jl		.hiba_n
+	cmp		eax, 256
+	jg		.hiba_n
 	mov		ecx, eax
 	cdq
 	mov		ebx, 4
@@ -26,43 +32,54 @@ main:
 	cmp		edx, 0
 	jne		.hiba_n
 	
-	mov		eax, ecx
-	mov		[n], eax
+	mov		[n], ecx
 	xor		ecx, ecx		; ecx = 0
+	mov		eax, be1
+	call	io_writestr
+	call	io_writeln
+	
 .loop_a:
+	mov		eax, str1		; 'A['
+	call	io_writestr
+	mov		eax, ecx
+	call	io_writeint		; index
+	mov		eax, str3		; '] = '
+	call	io_writestr
 	call	io_readflt
 	movss	[arr_A + 4 * ecx], xmm0
 	inc		ecx
-	cmp		ecx, eax
+	cmp		ecx, [n]
 	jne		.loop_a
 	xor		ecx, ecx
+	mov		eax, be2
+	call	io_writestr
+	call	io_writeln
 .loop_b:
+	mov		eax, str2		; 'B['
+	call	io_writestr
+	mov		eax, ecx
+	call	io_writeint		; index
+	mov		eax, str3		; '] = '
+	call	io_writestr
 	call	io_readflt
 	movss	[arr_B + 4 * ecx], xmm0
 	inc		ecx
-	cmp		ecx, eax
+	cmp		ecx, [n]
 	jne		.loop_b	
 	xor		ecx, ecx
 	
-; .loop_ki_A:
-	; movss	xmm0, [arr_A + 4 * ecx]
-	; call	io_writeflt
-	; call	io_writeln
-	; inc		ecx
-	; cmp		ecx, [n]
-	; jne		.loop_ki_A
-	; xor		ecx, ecx
-; .loop_ki_B:
-	; movss	xmm0, [arr_B + 4 * ecx]
-	; call	io_writeflt
-	; call	io_writeln
-	; inc		ecx
-	; cmp		ecx, [n]
-	; jne		.loop_ki_B
-	
 	call	Calculate
-		
+	mov		eax, er
+	call	io_writestr
+	call	io_writeln
+	
 .loop_res:
+	mov		eax, strE		; 'E['
+	call	io_writestr
+	mov		eax, ecx
+	call	io_writeint		; index
+	mov		eax, str3		; '] = '
+	call	io_writestr
 	movss	xmm0, [res + 4 * ecx]
 	call	io_writeflt
 	call	io_writeln
@@ -75,11 +92,11 @@ main:
 	
 	
 .hiba_n:
-	; kiir hibauzenet
+	mov		eax, hiba
+	call	io_writestr
+	call	io_writeln
 	jmp		.loop_n
-
-
-
+	
 
 Calculate:
 	pushad
@@ -116,15 +133,24 @@ Calculate:
 
 
 
-
-
 section .bss
 	arr_A	resd	256
 	arr_B	resd	256
 	res		resd	256
 	n		resd	1
-	;arr_res		resd	256
 	
 section .data
 	one		dd		1.0, 1.0, 1.0, 1.0
 	four	dd		4.0, 4.0, 4.0, 4.0
+	hiba	db		'Hiba: a szam pozitiv es oszthato kell legyen 4-gyel', 0
+	strn	db		'Adja meg a tombok hosszat(n integer, 4<=n<=256): ', 0
+	strA	db		'Adja meg az A tomb elemeit:', 0
+	strB	db		'Adja meg a B tomb elemeit:', 0
+	strE	db		'E[', 0
+	str1	db		'A[', 0
+	str2	db		'B[', 0
+	str3	db		'] = ', 0
+	feladat	db		'E(a,b) = (b^3 - a) / (a + b) - (a - b^2 + 1) / 4', 0
+	be1		db		'Adja meg az elso tomb elemeit:', 0
+	be2		db		'Adja meg a masodik tomb elemeit:', 0
+	er		db		'Az eredmeny:', 0
