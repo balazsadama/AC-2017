@@ -13,57 +13,41 @@ section .text
 
 main:
 
-	call	ReadFloat
-	call	mio_writeln
-	call	WriteFloat
-	call	mio_writeln
-	call	WriteFloatExp
-
-	; mov		esi, str1
-	; call	WriteStr
 	; call	ReadFloat
-	
-	; call	WriteFloat
 	; call	mio_writeln
-	
-	; call	mio_writeln
-	; movss	[num_a], xmm0
-	
-	; mov		esi, str2
-	; call	WriteStr
-	; call	ReadFloat
-	
-	; call	WriteFloat
-	; call	mio_writeln
-	
-	; call	mio_writeln
-	; movss	[num_b], xmm0
-	
-	; mov		esi, str1
-	; call	WriteStr
-	; call	ReadFloat
-	
-	; call	WriteFloat
-	; call	mio_writeln
-	
-	; call	mio_writeln
-	; movss	[num_c], xmm0
-	
-	; mov		esi, str2
-	; call	WriteStr
-	; call	ReadFloat
-	
-	; call	WriteFloat
-	; call	mio_writeln
-	
-	; call	mio_writeln
-	; movss	[num_d], xmm0
-	
-	; call	Calculate
-	; movss	xmm0, [res]
 	; call	WriteFloat
 	; call	mio_writeln
 	; call	WriteFloatExp
+
+	mov		esi, str1
+	call	WriteStr
+	call	ReadFloat
+	call	mio_writeln
+	movss	[num_a], xmm0
+	
+	mov		esi, str2
+	call	WriteStr
+	call	ReadFloat
+	call	mio_writeln
+	movss	[num_b], xmm0
+	
+	mov		esi, str1
+	call	WriteStr
+	call	ReadFloat
+	call	mio_writeln
+	movss	[num_c], xmm0
+	
+	mov		esi, str2
+	call	WriteStr
+	call	ReadFloat
+	call	mio_writeln
+	movss	[num_d], xmm0
+	
+	call	Calculate
+	movss	xmm0, [res]
+	call	WriteFloat
+	call	mio_writeln
+	call	WriteFloatExp
 	
 	
 	ret
@@ -327,11 +311,21 @@ WriteFloat:
 	mov		eax, '.'
 	call	mio_writechar
 	subss	xmm0, xmm1			; megtartjuk a tortreszt
-	mulss	xmm0, [mil]			; 6 tizedes pontossaggal irjuk ki
+	mov		ecx, 6				; 6 tizedes pontossaggal irjuk ki
+	
+.loop_write:
+	jecxz	.end
+	mulss	xmm0, [ten]			
 	cvttss2si eax, xmm0
-	call	WriteInt			; kiirjuk az egesz reszet
+	cvtsi2ss xmm1, eax
+	add		eax, '0'
+	call	mio_writechar
+	subss	xmm0, xmm1
+	dec		ecx
+	jmp		.loop_write
 	
 	
+.end:
 	movdqu xmm1, [esp + 16]
 	movdqu xmm0, [esp]
 	
@@ -378,7 +372,7 @@ WriteFloatExp:
 	mov		eax, '.'
 	call	mio_writechar
 	
-	mov		ecx, 6				; max 6 pontossaggal irjuk ki
+	mov		ecx, 6				; 6 pontossaggal irjuk ki
 .while_not_zero:
 	jecxz	.stop
 	subss	xmm0, xmm1
