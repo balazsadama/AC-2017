@@ -12,13 +12,10 @@ global main
 section .text
 
 main:
-
-	; call	ReadFloat
-	; call	mio_writeln
-	; call	WriteFloat
-	; call	mio_writeln
-	; call	WriteFloatExp
-
+	
+	mov		esi, str3
+	call	WriteStr
+	
 	mov		esi, str1
 	call	WriteStr
 	call	ReadFloat
@@ -43,6 +40,9 @@ main:
 	call	mio_writeln
 	movss	[num_d], xmm0
 	
+	
+	mov		esi, str4
+	call	WriteStr
 	call	Calculate
 	movss	xmm0, [res]
 	call	WriteFloat
@@ -251,12 +251,10 @@ ReadFloat:
 	
 	sub		bl, '0'
 	cvtsi2ss xmm1, ebx			; xmm2-be tesszuk az uj szamjegyet float-kent
-	;mulss	xmm1, [point_one]	; a szam eddigi valos reszet megszorozzuk 0.1-gyel
 	mulss	xmm1, xmm2	; az uj szamjegyet megszorozzuk 10 megfelelo hatvanyaval
 	mulss	xmm2, [point_one]
 	addss	xmm0, xmm1			; hozzaadjuk az uj szamjegyet
-	
-	;dec		ecx
+
 	inc		edx
 	jmp		.loop_point
 
@@ -457,6 +455,8 @@ WriteStr:
 section .data
 	str1		db		'Adjon meg egy egyszeres pontossagu lebegopontos erteket hagyomanyos formaban: ', 0
 	str2		db		'Adjon meg egy egyszeres pontossagu lebegopontos erteket exponencialis formaban: ', 0
+	str3		db		'E(a,b,c,d) = (a^2 - b + c) / d + (a - b^3 + d) / c - 2.7', 0
+	str4		db		'E(a,b,c,d) = ', 0
 	konst		dd		2.7
 	point_one	dd		0.1
 	one			dd		1.0
