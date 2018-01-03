@@ -45,6 +45,38 @@ main:
 	; Draw something
 	call	gfx_map			; map the framebuffer -> EAX will contain the pointer
 	
+	
+	
+	
+
+	
+	
+	
+	; kiszamit deltax, deltay - ennyivel noveljuk a szamokat minden iteracional		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	movss	xmm0, [xmax]
+	subss	xmm0, [xmin]				; xmm0 = xmax - xmin
+	mov		eax, WIDTH
+	cvtsi2ss xmm1, eax					; xmm1 = WIDTH
+	divss	xmm0, xmm1					; xmm0 = (xmax - xmin) / WIDTH = deltax
+	movss	[deltax], xmm0
+	
+	movss	xmm0, [ymax]
+	subss	xmm0, [ymin]
+	mov		eax, HEIGHT
+	cvtsi2ss xmm1, eax																;ezt at kene rakni szerintem a mainloop utan
+	divss	xmm0, xmm1					; xmm0 = (ymax - ymin) / HEIGHT = deltay	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	movss	[deltay], xmm0
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	; Loop over the lines
 	xor		ecx, ecx		; ECX - line (Y)
 .yloop:
@@ -66,11 +98,34 @@ main:
 	
 	
 	; Write the pixel
-	pushad
-	xorps	xmm0, xmm0					; x = 0.0
-	xorps	xmm1, xmm1					; y = 0.0
+	pushad														;!!!!!!!!!!!!!!!!	 ez a sor kell, ezt ne torold ki veletlenul pls!!!!!!!!!!!!!!!!!!
 	
-	xor		ecx, ecx					; iterator
+	; kiszamit deltax, deltay - ennyivel noveljuk a szamokat minden iteracional		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	; movss	xmm0, [xmax]
+	; subss	xmm0, [xmin]				; xmm0 = xmax - xmin
+	; mov		eax, WIDTH
+	; cvtsi2ss xmm1, eax					; xmm1 = WIDTH
+	; divss	xmm0, xmm1					; xmm0 = (xmax - xmin) / WIDTH = deltax
+	; movss	[deltax], xmm0
+	
+	; movss	xmm0, [ymax]
+	; subss	xmm0, [ymin]
+	; mov		eax, HEIGHT
+	; cvtsi2ss xmm1, eax
+	; divss	xmm0, xmm1					; xmm0 = (ymax - ymin) / HEIGHT = deltay	;ezt at kene rakni szerintem a mainloop utan
+	; movss	[deltay], xmm0															;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	
+	
+	; kiszamoljuk a kezdoertekeket
+	cvtsi2ss xmm0, edx					; x koordinatat valossa alakitjuk
+	mulss	xmm0, [deltax]				; kialakitjuk a kezdoerteket
+	addss	xmm0, [xmin]				
+	
+	cvtsi2ss xmm1, ecx					; y koordinatat valossa alakitjuk
+	mulss	xmm1, [deltay]				; kialakitjuk a kezdoerteket
+	addss	xmm1, [ymin]
+	
+	xor		ebx, ebx					; iterator
 .iterate_pixel:
 	movss	xmm2, xmm0
 	mulss	xmm2, xmm0					; xmm2 = x^2
@@ -87,8 +142,8 @@ main:
 	mulss	xmm2, xmm1					; xmm2 = x^2 + y^2
 	comiss	xmm2, [four]
 	jg		.escaped
-	inc		ecx
-	cmp		ecx, [max_iter]
+	inc		ebx
+	cmp		ebx, [max_iter]
 	jge		.reached_max_it
 	jmp		.iterate_pixel
 	
@@ -134,12 +189,12 @@ main:
 	; mov		[eax+3], bl
 	
 .next_pixel:
+popad
 	add		eax, 4		    ; next pixel
 	
 	
 	
 	
-	popad
 	inc		edx
 	jmp		.xloop
 	
@@ -245,7 +300,7 @@ section .data
 	xmax		dd		1.0
 	ymin		dd		-1.0
 	ymax		dd		1.0
-	max_iter	dd		100.0
+	max_iter	dd		100
 	x0			dd		-2.5
 	y0			dd		-1.0
 	two			dd		2.0
