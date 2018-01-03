@@ -140,7 +140,7 @@ main:
 	
 	movss	xmm2, xmm0
 	mulss	xmm2, xmm1					; xmm2 = x^2 + y^2
-	comiss	xmm2, [four]
+	comiss	xmm2, [four] 
 	jg		.escaped
 	inc		ebx
 	cmp		ebx, [max_iter]
