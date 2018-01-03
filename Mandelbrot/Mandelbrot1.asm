@@ -51,7 +51,7 @@ main:
 
 	
 	
-	
+	push	eax
 	; kiszamit deltax, deltay - ennyivel noveljuk a szamokat minden iteracional		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	movss	xmm0, [xmax]
 	subss	xmm0, [xmin]				; xmm0 = xmax - xmin
@@ -66,7 +66,7 @@ main:
 	cvtsi2ss xmm1, eax																;ezt at kene rakni szerintem a mainloop utan
 	divss	xmm0, xmm1					; xmm0 = (ymax - ymin) / HEIGHT = deltay	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	movss	[deltay], xmm0
-	
+	pop		eax
 	
 	
 	
@@ -148,17 +148,17 @@ main:
 	jmp		.iterate_pixel
 	
 .escaped:								; if it escaped, make it silver color
-	mov		[eax], 192
-	mov		[eax+1], 192
-	mov		[eax+2], 192
-	mov		[eax+3], 0
+	mov		dword [eax], 192
+	mov		dword [eax+1], 192
+	mov		dword [eax+2], 192
+	mov		dword [eax+3], 0
 	jmp		.next_pixel
 	
 .reached_max_it:						; if it passed, make it black
-	mov		[eax], 0
-	mov		[eax+1], 0
-	mov		[eax+2], 0
-	mov		[eax+3], 0
+	mov		dword [eax], 0
+	mov		dword [eax+1], 0
+	mov		dword [eax+2], 0
+	mov		dword [eax+3], 0
 	
 	
 	
